@@ -1,11 +1,13 @@
 package edu.jsu.mcis.cs310.tas_fa23.dao;
 
+import edu.jsu.mcis.cs310.tas_fa23.Badge;
+import edu.jsu.mcis.cs310.tas_fa23.EventType;
 import edu.jsu.mcis.cs310.tas_fa23.Punch;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 public class PunchDAO {
     
@@ -20,7 +22,9 @@ public class PunchDAO {
     public Punch find(int id) {
 
         Punch punch = null;
-
+        
+        BadgeDAO badgeDAO = daoFactory.getBadgeDAO();
+        
         PreparedStatement ps = null;
         ResultSet rs = null;
 
@@ -42,11 +46,28 @@ public class PunchDAO {
                     while (rs.next()) {
 
                         int terminalId = rs.getInt("terminalid");
-                        String badgeId = rs.getString("badgeid");
-                        Timestamp timestamp = rs.getTimestamp("timestamp");
+                        Badge badge = badgeDAO.find(rs.getString("badgeid"));
+                        LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime();
                         int eventTypeId = rs.getInt("eventtypeid");
                         
-                        punch = new Punch(id, terminalId, badgeId, timestamp, eventTypeId);
+                        EventType punchType = null;
+                        
+                        switch (eventTypeId) {
+                            case 0 ->  {
+                                punchType = EventType.CLOCK_OUT;
+                            }
+                            case 1 ->  {
+                                punchType = EventType.CLOCK_IN;
+                            }
+                            case 2 ->  {
+                                punchType = EventType.TIME_OUT;
+                            }
+                            default -> {
+                                throw new IllegalStateException("Invalid Id");
+                            }
+                        }
+                        
+                        punch = new Punch(id, terminalId, badge, timestamp, punchType);
 
                     }
 

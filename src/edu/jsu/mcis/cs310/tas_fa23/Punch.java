@@ -1,84 +1,63 @@
 package edu.jsu.mcis.cs310.tas_fa23;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Punch {
-    private final int id;
-    private final int terminalId;
-    private final String badgeId;
-    private final LocalDateTime timestamp;
-    private final int eventTypeId;
+    private Integer id = null;
+    private final Integer terminalid;
+    private final Badge badge;
+    private LocalDateTime originalTimestamp;
+    private final EventType punchType;
     
-    public Punch(int id, int terminalId, String badgeId, Timestamp timestamp, int eventTypeId) {
+    public Punch(int terminalid, Badge badge, EventType punchType) {
+        this.terminalid = terminalid;
+        this.badge = badge;
+        this.punchType = punchType;
+    }
+    
+    public Punch(int id, int terminalid, Badge badge, LocalDateTime originalTimestamp, EventType punchType) {
         this.id = id;
-        this.terminalId = terminalId;
-        this.badgeId = badgeId;
-        this.timestamp = timestamp.toLocalDateTime();
-        this.eventTypeId = eventTypeId;
+        this.terminalid = terminalid;
+        this.badge = badge;
+        this.originalTimestamp = originalTimestamp;
+        this.punchType = punchType;
     }
     
     public int getId() {
         return id;
     }
     
-    public int getTerminalId() {
-        return terminalId;
+    public int getTerminalid() {
+        return terminalid;
     }
     
-    public String getBadgeId() {
-        return badgeId;
+    public Badge getBadge() {
+        return badge;
     }
     
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public LocalDateTime getOriginaltimestamp() {
+        return originalTimestamp;
     }
     
-    public int getEventTypeId() {
-        return eventTypeId;
+    public EventType getPunchtype() {
+        return punchType;
     }
-    
-    private EventType getEventType(int id) {
-        EventType eventType = null;
-        
-        switch (eventTypeId) {
-            case 0 ->  {
-                eventType = EventType.CLOCK_OUT;
-            }
-            case 1 ->  {
-                eventType = EventType.CLOCK_IN;
-            }
-            case 2 ->  {
-                eventType = EventType.TIME_OUT;
-            }
-        }
-        
-        return eventType;
-    }
-    
+         
     public String printOriginal() {
         StringBuilder sb = new StringBuilder();
-        sb.append('#').append(badgeId).append(' ');
-        sb.append(getEventType(eventTypeId)).append(": ");
+        sb.append('#').append(getBadge().getId()).append(' ');
+        sb.append(getPunchtype()).append(": ");
         
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
         
-        sb.append(timestamp.format(formatter).toUpperCase());
+        sb.append(originalTimestamp.format(formatter).toUpperCase());
         
         return sb.toString();
     }
     
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append('#').append(badgeId).append(' ');
-        sb.append(getEventType(eventTypeId)).append(": ");
-        
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy hh:mm:ss");
-        
-        sb.append(timestamp.format(formatter).toUpperCase());
-        
-        return sb.toString();
+        return printOriginal();
     }
 }
