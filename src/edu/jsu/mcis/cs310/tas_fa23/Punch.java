@@ -14,6 +14,8 @@ public class Punch {
         this.terminalid = terminalid;
         this.badge = badge;
         this.punchType = punchType;
+        
+        this.originalTimestamp = LocalDateTime.now();
     }
     
     public Punch(int id, int terminalid, Badge badge, LocalDateTime originalTimestamp, EventType punchType) {
