@@ -8,6 +8,8 @@ public class Punch {
     private final Integer terminalid;
     private final Badge badge;
     private LocalDateTime originalTimestamp;
+    private LocalDateTime adjustedTimestamp;
+    private PunchAdjustmentType adjustmenttype;
     private final EventType punchType;
     
     public Punch(int terminalid, Badge badge, EventType punchType) {
