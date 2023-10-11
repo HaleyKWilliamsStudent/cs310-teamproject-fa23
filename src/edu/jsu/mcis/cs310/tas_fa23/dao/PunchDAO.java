@@ -19,6 +19,12 @@ public class PunchDAO {
         this.daoFactory = daoFactory;
     }
     
+    /**
+     * Searches the "event" table in the database using the id to find a punch
+     * @param id The id of the punch
+     * @return A Punch Object for the given id 
+     */
+    
     public Punch find(int id) {
 
         Punch punch = null;
@@ -43,7 +49,7 @@ public class PunchDAO {
 
                     rs = ps.getResultSet();
 
-                    while (rs.next()) {
+                    if (rs.next()) {
 
                         int terminalId = rs.getInt("terminalid");
                         Badge badge = badgeDAO.find(rs.getString("badgeid"));
