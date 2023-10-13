@@ -20,7 +20,7 @@ public class Department {
         return terminalid;
     }
 
-    public String geDescription() {
+    public String getDescription() {
         return description;
     }
 

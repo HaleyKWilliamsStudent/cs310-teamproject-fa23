@@ -40,8 +40,12 @@ public final class DAOFactory {
         return new PunchDAO(this);
     }
     
-    public DepartmentDAO getDepartmentDAO(){
+    public DepartmentDAO getDepartmentDAO() {
         return new DepartmentDAO(this);
+    }
+    
+    public EmployeeDAO getEmployeeDAO() {
+        return new EmployeeDAO(this);
     }
 
 }

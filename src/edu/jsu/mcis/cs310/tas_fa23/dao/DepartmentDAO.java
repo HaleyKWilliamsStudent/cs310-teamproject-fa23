@@ -28,17 +28,13 @@ public class DepartmentDAO {
 
                 ps.setInt(1, numericid);
 
-                boolean hasresults = ps.execute();
+                rs = ps.executeQuery();
 
-                if (hasresults) {
-                    rs = ps.getResultSet();
+                if (rs.next()) {
+                    int terminalid = rs.getInt("terminalid");
+                    String description = rs.getString("description");
 
-                    while (rs.next()) {
-                        int terminalid = rs.getInt("terminalid");
-                        String description = rs.getString("description");
-                        
-                        department = new Department(numericid, terminalid, description);
-                    }
+                    department = new Department(numericid, terminalid, description);
                 }
             }
         } catch (SQLException e) {
