@@ -81,4 +81,21 @@ public class EmployeeFindTest {
 
     }
     
+    @Test
+    public void testFindEmployee5() {
+        
+        EmployeeDAO employeeDAO = daoFactory.getEmployeeDAO();
+        BadgeDAO badgeDAO = daoFactory.getBadgeDAO();
+
+        /* Retrieve Employee from Database (by badge) */
+
+        Badge b = badgeDAO.find("BE51FA92");
+        Employee e5 = employeeDAO.find(b);
+
+        /* Compare to Expected Values */
+        
+        assertEquals("ID #90: Harris, Andrea D (#BE51FA92), Type: Full-Time, Department: Assembly, Active: 11/08/2015", e5.toString());
+
+    }
+    
 }
