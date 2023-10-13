@@ -6,8 +6,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 
 
+
 /**
- *
+ * 
  * @author Grant
  */
 public class Shift {
@@ -21,9 +22,13 @@ public class Shift {
     private final LocalTime lunchstart;
     private final LocalTime lunchstop;
     private final Integer lunchthreshold;
-    private LocalTime lunchduration;
-    private LocalTime shiftduration;
+    private int lunchduration;
+    private int shiftduration;
     
+    /**
+     * 
+     * @param shiftMap A map to initialize the shift object
+     */
     public Shift(HashMap<String, Object> shiftMap) {
         this.id = (Integer)shiftMap.get("id");
         this.description = shiftMap.get("description").toString();
@@ -37,13 +42,27 @@ public class Shift {
         this.lunchthreshold = (Integer)shiftMap.get("lunchthreshold");
     }
     
-    public long getLunchDuration(LocalTime lunchstart, LocalTime lunchstop) {
-        long minutes = ChronoUnit.MINUTES.between(this.lunchstart, this.lunchstop);
+    /**
+     * 
+     * @param lunchstart
+     * @param lunchstop
+     * @return Returns a long containing the number of minutes in a lunch break
+     */
+    public int getLunchDuration(LocalTime lunchstart, LocalTime lunchstop) {
+        int minutes = (int)ChronoUnit.MINUTES.between(this.lunchstart, this.lunchstop);
+        this.lunchduration = minutes;
         return minutes;
     }
     
-    public long getShiftDuration(LocalTime shiftstart, LocalTime shiftstop) {
-        long minutes = ChronoUnit.MINUTES.between(this.shiftstart, this.shiftstop);
+    /**
+     * 
+     * @param shiftstart
+     * @param shiftstop
+     * @return Returns a long containing the number of minutes in a shift
+     */
+    public int getShiftDuration(LocalTime shiftstart, LocalTime shiftstop) {
+        int minutes = (int)ChronoUnit.MINUTES.between(this.shiftstart, this.shiftstop);
+        this.shiftduration = minutes;
         return minutes;
     }
     
@@ -88,6 +107,9 @@ public class Shift {
     }
     
     @Override
+    /**
+     * returns a formatted version of all fields belonging to a shift
+     */
     public String toString() {
         StringBuilder s = new StringBuilder();
         s.append(description).append(": ");

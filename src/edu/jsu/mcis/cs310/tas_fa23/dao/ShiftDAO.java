@@ -20,6 +20,11 @@ public class ShiftDAO {
         this.daoFactory = daoFactory;
     }
     
+    /**
+     * 
+     * @param id
+     * @return returns a shift using an id as an argument
+     */
     public Shift find(int id) {
         Shift shift = null;
         
@@ -100,6 +105,11 @@ public class ShiftDAO {
         return shift;
     }
     
+    /**
+     * 
+     * @param badge
+     * @return returns a shift using a badge as an argument
+     */
     public Shift find(Badge badge) {
         Shift shift = null;
         
