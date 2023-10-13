@@ -1,9 +1,7 @@
 
 package edu.jsu.mcis.cs310.tas_fa23;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 
@@ -14,15 +12,15 @@ import java.util.HashMap;
  */
 public class Shift {
     private Integer id = null;
-    private String description;
-    private LocalTime shiftstart;
-    private LocalTime shiftstop;
-    private Integer roundinterval;
-    private Integer graceperiod;
-    private Integer dockpenalty;
-    private LocalTime lunchstart;
-    private LocalTime lunchstop;
-    private Integer lunchthreshold;
+    private final String description;
+    private final LocalTime shiftstart;
+    private final LocalTime shiftstop;
+    private final Integer roundinterval;
+    private final Integer graceperiod;
+    private final Integer dockpenalty;
+    private final LocalTime lunchstart;
+    private final LocalTime lunchstop;
+    private final Integer lunchthreshold;
     private LocalTime lunchduration;
     private LocalTime shiftduration;
     
@@ -87,6 +85,17 @@ public class Shift {
     
     public Integer getLunchThreshold() {
         return this.lunchthreshold;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        s.append(description).append(": ");
+        s.append(shiftstart).append(" - ").append(shiftstop);
+        s.append(" (").append(getShiftDuration(shiftstart, shiftstop)).append(" minutes); Lunch: ");
+        s.append(lunchstart).append(" - ").append(lunchstop).append(" (");
+        s.append(getLunchDuration(lunchstart, lunchstop)).append(" minutes)");
+        return s.toString();
     }
     
 }

@@ -2,6 +2,7 @@ package edu.jsu.mcis.cs310.tas_fa23;
 
 import edu.jsu.mcis.cs310.tas_fa23.dao.BadgeDAO;
 import edu.jsu.mcis.cs310.tas_fa23.dao.DAOFactory;
+import edu.jsu.mcis.cs310.tas_fa23.dao.ShiftDAO;
 import java.time.*;
 import java.util.*;
 import java.time.temporal.ChronoUnit;
