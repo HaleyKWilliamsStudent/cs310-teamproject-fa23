@@ -184,9 +184,9 @@ public class PunchListFindTest {
 
         /* Create Timestamp and Badge Objects for Punch List */
         
-        LocalDate ts = LocalDate.of(2018, Month.SEPTEMBER, 27);
+        LocalDate ts = LocalDate.of(2018, Month.AUGUST, 9);
 
-        Badge b = badgeDAO.find("8709982E");
+        Badge b = badgeDAO.find("618072EA");
 
         /* Retrieve Punch List #1 (created by DAO) */
         
@@ -204,8 +204,8 @@ public class PunchListFindTest {
         ArrayList<Punch> p2 = new ArrayList<>();
 
         /* Add Punches */
-        p2.add(punchDAO.find(6875));
-        p2.add(punchDAO.find(6876));
+        p2.add(punchDAO.find(888));
+        p2.add(punchDAO.find(954));
 
         /* Export Punch List #2 Contents to StringBuilder */
         
@@ -233,9 +233,9 @@ public class PunchListFindTest {
 
         /* Create Timestamp and Badge Objects for Punch List */
         
-        LocalDate ts = LocalDate.of(2018, Month.SEPTEMBER, 27);
+        LocalDate ts = LocalDate.of(2018, Month.AUGUST, 1);
 
-        Badge b = badgeDAO.find("E70AD3D2");
+        Badge b = badgeDAO.find("58EB7EA1");
 
         /* Retrieve Punch List #1 (created by DAO) */
         
@@ -253,8 +253,8 @@ public class PunchListFindTest {
         ArrayList<Punch> p2 = new ArrayList<>();
 
         /* Add Punches */
-        p2.add(punchDAO.find(6092));
-        p2.add(punchDAO.find(6140));
+        p2.add(punchDAO.find(166));
+        p2.add(punchDAO.find(262));
 
         /* Export Punch List #2 Contents to StringBuilder */
         
