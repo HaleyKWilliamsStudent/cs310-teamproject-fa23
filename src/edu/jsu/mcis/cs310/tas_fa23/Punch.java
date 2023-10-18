@@ -1,6 +1,8 @@
 package edu.jsu.mcis.cs310.tas_fa23;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -28,7 +30,6 @@ public class Punch {
         this.terminalid = terminalid;
         this.badge = badge;
         this.punchType = punchType;
-        
         this.originalTimestamp = LocalDateTime.now();
     }
     
@@ -112,6 +113,75 @@ public class Punch {
     }
     
     /**
+     * Adjusts an Employees punch time either forward or backward
+     * @param s The Shift that the Employee is punching in on
+     */
+    
+    public void adjust(Shift s) {
+        LocalDateTime ost = originalTimestamp;
+        LocalTime punchTime = ost.toLocalTime();
+        LocalTime shiftStartTime = s.getShiftStart();
+        LocalTime shiftStopTime = s.getShiftStop();
+        LocalTime lunchStartTime = s.getLunchStart();
+        LocalTime lunchStopTime = s.getLunchStop();
+        int roundInterval = s.getRoundInterval();
+        int gracePeriod = s.getGracePeriod();
+        int dockPenalty = s.getDockPenalty();
+        int minutesOver = punchTime.getMinute() % roundInterval;
+        
+        boolean isWeekday = (ost.getDayOfWeek() != DayOfWeek.SATURDAY && ost.getDayOfWeek() != DayOfWeek.SUNDAY);
+        
+        if (punchType != EventType.TIME_OUT && isWeekday) {
+            if (punchTime.isAfter(shiftStartTime.minusMinutes(gracePeriod)) && punchTime.isBefore(shiftStartTime)) {
+                
+                if (punchType == EventType.CLOCK_IN) {
+                    setAdjustedTimestamp(ost.with(shiftStartTime), PunchAdjustmentType.SHIFT_START);
+                }
+            } else if (punchTime.isBefore(shiftStopTime.plusMinutes(roundInterval)) && punchTime.isAfter(shiftStopTime)) {
+                setAdjustedTimestamp(ost.with(shiftStopTime), PunchAdjustmentType.SHIFT_STOP);
+            } else if (punchTime.isBefore(shiftStopTime) && punchTime.isAfter(shiftStopTime.minusMinutes(gracePeriod))) {
+                setAdjustedTimestamp(ost.with(shiftStopTime), PunchAdjustmentType.SHIFT_STOP);
+            }
+            else if (punchTime.isAfter(lunchStartTime) && punchTime.isBefore(lunchStopTime)) {
+                if (punchType == EventType.CLOCK_OUT) {
+                    setAdjustedTimestamp(ost.with(lunchStartTime), PunchAdjustmentType.LUNCH_START);
+                } else {
+                    setAdjustedTimestamp(ost.with(lunchStopTime), PunchAdjustmentType.LUNCH_STOP);
+
+                }
+            } else if (punchTime.isAfter(shiftStartTime.plusMinutes(gracePeriod)) && punchTime.isBefore(shiftStartTime.plusMinutes(gracePeriod).plusMinutes(dockPenalty))) {
+                setAdjustedTimestamp(ost.with(shiftStartTime.withMinute(shiftStartTime.getMinute() + dockPenalty)), PunchAdjustmentType.SHIFT_DOCK);
+            } else if (punchTime.isBefore(shiftStopTime.minusMinutes(gracePeriod)) && punchTime.isAfter(shiftStopTime.minusMinutes(gracePeriod).minusMinutes(dockPenalty))) {
+                setAdjustedTimestamp(ost.with(shiftStopTime).withMinute(shiftStopTime.getMinute() - dockPenalty), PunchAdjustmentType.SHIFT_DOCK);
+            } else if (punchTime.isAfter(shiftStartTime.plusMinutes(gracePeriod)) || punchTime.isBefore(shiftStopTime.minusMinutes(gracePeriod))) {
+                if (punchType == EventType.CLOCK_IN) {
+                    setAdjustedTimestamp(ost.with(shiftStartTime), PunchAdjustmentType.SHIFT_START);
+                } else {
+                    if (punchTime.getMinute() % roundInterval == 0) {
+                        setAdjustedTimestamp(ost.with(shiftStopTime.withHour(ost.getHour())), PunchAdjustmentType.NONE);
+
+                    } else {
+                        round(roundInterval, minutesOver);
+                    }
+                }
+            }
+        } else {
+            round(roundInterval, minutesOver);
+        }
+    }
+
+    private void round(int roundInterval, int minutesOver) {
+        int minutesToNext = roundInterval - minutesOver;
+        
+        if (minutesOver < roundInterval / 2) {
+            setAdjustedTimestamp(originalTimestamp.minusMinutes(minutesOver), PunchAdjustmentType.INTERVAL_ROUND);
+        } else {
+            setAdjustedTimestamp(originalTimestamp.plusMinutes(minutesToNext), PunchAdjustmentType.INTERVAL_ROUND);
+        }
+    }
+
+    
+    /**
      * Creates a formatted string to represent this punch event.
      * 
      * @return A string formatted as "#{badgeId} {punchType}: {Day MM/dd/yyyy} {HH:mm:ss}".
@@ -129,8 +199,27 @@ public class Punch {
         return sb.toString();
     }
     
+    public String printAdjusted() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('#').append(getBadge().getId()).append(' ');
+        sb.append(getPunchtype()).append(": ");
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
+        
+        sb.append(adjustedTimestamp.format(formatter).toUpperCase()).append(" ");
+        sb.append("(").append(adjustmenttype).append(")");
+        
+        return sb.toString();
+    }
+    
     @Override
     public String toString() {
         return printOriginal();
+    }
+    
+    // Helper function to simplify setting adjustedTimestamp and adjustmenttype
+    private void setAdjustedTimestamp(LocalDateTime time, PunchAdjustmentType type) {
+        adjustedTimestamp = time.withSecond(0).withNano(0);
+        adjustmenttype = type;
     }
 }
