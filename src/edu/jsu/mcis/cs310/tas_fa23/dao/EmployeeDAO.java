@@ -4,6 +4,7 @@ import edu.jsu.mcis.cs310.tas_fa23.Badge;
 import edu.jsu.mcis.cs310.tas_fa23.Department;
 import edu.jsu.mcis.cs310.tas_fa23.Employee;
 import edu.jsu.mcis.cs310.tas_fa23.EmployeeType;
+import edu.jsu.mcis.cs310.tas_fa23.Shift;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -137,12 +138,12 @@ public class EmployeeDAO {
         Department department = departmentDAO.find(departmentid);
         
         int shiftid = rs.getInt("shiftid");
-//        ShiftDAO shiftDAO = daoFactory.getShiftDAO();
-//        Shift shift = shiftDAO.find(shiftid);
+        ShiftDAO shiftDAO = daoFactory.getShiftDAO();
+        Shift shift = shiftDAO.find(shiftid);
 
         int employeetypeid = rs.getInt("employeetypeid");
         EmployeeType employeetype = employeetypeid == 0 ? EmployeeType.PART_TIME : EmployeeType.FULL_TIME;
 
-        return new Employee(id, firstname, middlename, lastname, active, badge, department, employeetype);
+        return new Employee(id, firstname, middlename, lastname, active, badge, department, shift, employeetype);
     }
 }

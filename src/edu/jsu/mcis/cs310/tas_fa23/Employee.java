@@ -9,7 +9,7 @@ public class Employee {
     private final LocalDateTime active;
     private final Badge badge;
     private final Department department;
-    private final Shift shift = null;
+    private final Shift shift;
     private final EmployeeType employeetype;
     
     /**
@@ -21,10 +21,11 @@ public class Employee {
      * @param active The date the Employee started on
      * @param badge A Badge Object representing the Employee's badge
      * @param department A Department Object representing the Employee's department
+     * @param shift A Shift Object representing the Employee's shift
      * @param employeetype The type of Employee Part-Time / Full-Time
      */
     
-    public Employee(int id, String firstname, String middlename, String lastname, LocalDateTime active, Badge badge, Department department, EmployeeType employeetype) {
+    public Employee(int id, String firstname, String middlename, String lastname, LocalDateTime active, Badge badge, Department department, Shift shift, EmployeeType employeetype) {
         this.id = id;
         this.firstname = firstname;
         this.middlename = middlename;
@@ -32,7 +33,7 @@ public class Employee {
         this.active = active;
         this.badge = badge;
         this.department = department;
-//        this.shift = shift;
+        this.shift = shift;
         this.employeetype = employeetype;
     }
     

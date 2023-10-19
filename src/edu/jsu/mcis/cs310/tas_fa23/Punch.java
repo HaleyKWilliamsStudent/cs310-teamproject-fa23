@@ -118,8 +118,7 @@ public class Punch {
      */
     
     public void adjust(Shift s) {
-        LocalDateTime ost = originalTimestamp;
-        LocalTime punchTime = ost.toLocalTime();
+        LocalDateTime ots = originalTimestamp;
         LocalTime shiftStartTime = s.getShiftStart();
         LocalTime shiftStopTime = s.getShiftStop();
         LocalTime lunchStartTime = s.getLunchStart();
@@ -127,44 +126,66 @@ public class Punch {
         int roundInterval = s.getRoundInterval();
         int gracePeriod = s.getGracePeriod();
         int dockPenalty = s.getDockPenalty();
-        int minutesOver = punchTime.getMinute() % roundInterval;
+        int minutesOver = ots.getMinute() % roundInterval;
         
-        boolean isWeekday = (ost.getDayOfWeek() != DayOfWeek.SATURDAY && ost.getDayOfWeek() != DayOfWeek.SUNDAY);
+        boolean isWeekday = (ots.getDayOfWeek() != DayOfWeek.SATURDAY && ots.getDayOfWeek() != DayOfWeek.SUNDAY);
+        boolean isNotTimeout = punchType != EventType.TIME_OUT;
         
-        if (punchType != EventType.TIME_OUT && isWeekday) {
-            if (punchTime.isAfter(shiftStartTime.minusMinutes(gracePeriod)) && punchTime.isBefore(shiftStartTime)) {
-                
+        LocalDateTime shiftStart = ots.with(shiftStartTime);
+        LocalDateTime shiftStartGraceBefore = shiftStart.minusMinutes(gracePeriod);
+        LocalDateTime shiftStartGraceAfter = shiftStart.plusMinutes(gracePeriod);
+        LocalDateTime shiftStop = ots.with(shiftStopTime);
+        LocalDateTime shiftStopGrace = shiftStop.minusMinutes(gracePeriod);
+        
+        LocalDateTime shiftStopInterval = shiftStop.plusMinutes(roundInterval);
+        
+        LocalDateTime lunchStart = ots.with(lunchStartTime);
+        LocalDateTime lunchStop = ots.with(lunchStopTime);
+        
+        LocalDateTime shiftStartDock = shiftStart.withMinute(shiftStart.getMinute()).plusMinutes(dockPenalty);
+        LocalDateTime shiftStopDock = shiftStop.withMinute(shiftStop.getMinute()).minusMinutes(dockPenalty);
+        
+        // Check if the punch is a time out punch and make sure it was made on a week day
+        if (isNotTimeout && isWeekday) {
+            // Is the clock in punch made within the grace period before the start of the shift
+            if (ots.isAfter(shiftStartGraceBefore) && ots.isBefore(shiftStart)) {
                 if (punchType == EventType.CLOCK_IN) {
-                    setAdjustedTimestamp(ost.with(shiftStartTime), PunchAdjustmentType.SHIFT_START);
+                    setAdjustedTimestamp(shiftStart, PunchAdjustmentType.SHIFT_START);
                 }
-            } else if (punchTime.isBefore(shiftStopTime.plusMinutes(roundInterval)) && punchTime.isAfter(shiftStopTime)) {
-                setAdjustedTimestamp(ost.with(shiftStopTime), PunchAdjustmentType.SHIFT_STOP);
-            } else if (punchTime.isBefore(shiftStopTime) && punchTime.isAfter(shiftStopTime.minusMinutes(gracePeriod))) {
-                setAdjustedTimestamp(ost.with(shiftStopTime), PunchAdjustmentType.SHIFT_STOP);
+            // Is the punch made within the interval after the end of the shift
+            } else if (ots.isBefore(shiftStopInterval) && ots.isAfter(shiftStop)) {
+                setAdjustedTimestamp(shiftStop, PunchAdjustmentType.SHIFT_STOP);
+            // Is the punch made before the end of the shift and after the grace period before the shift end
+            } else if (ots.isBefore(shiftStop) && ots.isAfter(shiftStopGrace)) {
+                setAdjustedTimestamp(shiftStop, PunchAdjustmentType.SHIFT_STOP);
             }
-            else if (punchTime.isAfter(lunchStartTime) && punchTime.isBefore(lunchStopTime)) {
+            // Is the punch made after the start of lunch and before the end of lunch
+            else if (ots.isAfter(lunchStart) && ots.isBefore(lunchStop)) {
                 if (punchType == EventType.CLOCK_OUT) {
-                    setAdjustedTimestamp(ost.with(lunchStartTime), PunchAdjustmentType.LUNCH_START);
+                    setAdjustedTimestamp(lunchStart, PunchAdjustmentType.LUNCH_START);
                 } else {
-                    setAdjustedTimestamp(ost.with(lunchStopTime), PunchAdjustmentType.LUNCH_STOP);
-
+                    setAdjustedTimestamp(lunchStop, PunchAdjustmentType.LUNCH_STOP);
                 }
-            } else if (punchTime.isAfter(shiftStartTime.plusMinutes(gracePeriod)) && punchTime.isBefore(shiftStartTime.plusMinutes(gracePeriod).plusMinutes(dockPenalty))) {
-                setAdjustedTimestamp(ost.with(shiftStartTime.withMinute(shiftStartTime.getMinute() + dockPenalty)), PunchAdjustmentType.SHIFT_DOCK);
-            } else if (punchTime.isBefore(shiftStopTime.minusMinutes(gracePeriod)) && punchTime.isAfter(shiftStopTime.minusMinutes(gracePeriod).minusMinutes(dockPenalty))) {
-                setAdjustedTimestamp(ost.with(shiftStopTime).withMinute(shiftStopTime.getMinute() - dockPenalty), PunchAdjustmentType.SHIFT_DOCK);
-            } else if (punchTime.isAfter(shiftStartTime.plusMinutes(gracePeriod)) || punchTime.isBefore(shiftStopTime.minusMinutes(gracePeriod))) {
+            // Is the punch made within the dock penalty interval after the grace period at shift start
+            } else if (ots.isAfter(shiftStartGraceAfter) && ots.isBefore(shiftStartGraceAfter.plusMinutes(dockPenalty))) {
+                setAdjustedTimestamp(shiftStartDock, PunchAdjustmentType.SHIFT_DOCK);
+            // Is the punch made within the dock penalty interval before the grace period at shift end
+            } else if (ots.isBefore(shiftStopGrace) && ots.isAfter(shiftStopGrace.minusMinutes(dockPenalty))) {
+                setAdjustedTimestamp(shiftStopDock, PunchAdjustmentType.SHIFT_DOCK);
+            // Is the punch made outside of the dock and grace periods for both shift start and end
+            } else if (ots.isAfter(shiftStartGraceAfter) || ots.isBefore(shiftStopGrace)) {
                 if (punchType == EventType.CLOCK_IN) {
-                    setAdjustedTimestamp(ost.with(shiftStartTime), PunchAdjustmentType.SHIFT_START);
+                    setAdjustedTimestamp(shiftStart, PunchAdjustmentType.SHIFT_START);
                 } else {
-                    if (punchTime.getMinute() % roundInterval == 0) {
-                        setAdjustedTimestamp(ost.with(shiftStopTime.withHour(ost.getHour())), PunchAdjustmentType.NONE);
+                    if (ots.getMinute() % roundInterval == 0) {
+                        setAdjustedTimestamp(ots.with(shiftStop.withHour(ots.getHour())), PunchAdjustmentType.NONE);
 
                     } else {
                         round(roundInterval, minutesOver);
                     }
                 }
             }
+            // Is the punch made on a weekend or is a time-out punch
         } else {
             round(roundInterval, minutesOver);
         }
