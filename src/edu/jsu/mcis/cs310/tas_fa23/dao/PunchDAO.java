@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class PunchDAO {
 
     private static final String QUERY_FIND = "SELECT * FROM event WHERE id = ?";
-    private static final String QUERY_LIST = "SELECT * FROM event WHERE badgeid = ? AND DATE(timestamp) = ?";
+    private static final String QUERY_LIST = "SELECT * FROM event WHERE badgeid = ? AND DATE(timestamp) = ? ORDER BY timestamp ASC";
 
     private final DAOFactory daoFactory;
 
@@ -33,8 +33,6 @@ public class PunchDAO {
 
         Punch punch = null;
 
-        BadgeDAO badgeDAO = daoFactory.getBadgeDAO();
-
         PreparedStatement ps = null;
         ResultSet rs = null;
 
@@ -51,14 +49,7 @@ public class PunchDAO {
 
                 if (rs.next()) {
 
-                    int terminalId = rs.getInt("terminalid");
-                    Badge badge = badgeDAO.find(rs.getString("badgeid"));
-                    LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime();
-                    int eventTypeId = rs.getInt("eventtypeid");
-
-                    EventType punchType = determinePunchType(eventTypeId);
-
-                    punch = new Punch(id, terminalId, badge, timestamp, punchType);
+                    punch = createFromQuery(rs);
 
                 }
 
@@ -105,6 +96,8 @@ public class PunchDAO {
     public ArrayList<Punch> list(Badge badge, LocalDate date) {
         ArrayList<Punch> punches = new ArrayList<>();
 
+        LocalDateTime dayStart = date.atStartOfDay();
+
         Punch punch = null;
 
         PreparedStatement ps = null;
@@ -118,22 +111,35 @@ public class PunchDAO {
 
                 ps = conn.prepareStatement(QUERY_LIST);
                 ps.setString(1, badge.getId());
-
-                ps.setTimestamp(2, Timestamp.valueOf(date.atStartOfDay()));
+                ps.setTimestamp(2, Timestamp.valueOf(dayStart));
 
                 rs = ps.executeQuery();
 
                 while (rs.next()) {
-                    int id = rs.getInt("id");
-                    int terminalId = rs.getInt("terminalid");
-                    LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime();
-                    int eventTypeId = rs.getInt("eventtypeid");
 
-                    EventType punchType = determinePunchType(eventTypeId);
-
-                    punch = new Punch(id, terminalId, badge, timestamp, punchType);
+                    punch = createFromQuery(rs);
 
                     punches.add(punch);
+                }
+
+                if (!punches.isEmpty()) {
+                    Punch lastPunch = punches.get(punches.size() - 1);
+
+                    if (lastPunch.getPunchtype() == EventType.CLOCK_IN) {
+                        ps.setString(1, badge.getId());
+                        ps.setTimestamp(2, Timestamp.valueOf(dayStart.plusDays(1)));
+
+                        rs = ps.executeQuery();
+
+                        if (rs.next()) {
+                            Punch nextPunch = createFromQuery(rs);
+
+                            if (nextPunch.getPunchtype() == EventType.CLOCK_OUT || nextPunch.getPunchtype() == EventType.TIME_OUT) {
+
+                                punches.add(nextPunch);
+                            }
+                        }
+                    }
                 }
 
             }
@@ -162,6 +168,67 @@ public class PunchDAO {
         }
 
         return punches;
+    }
+    
+    public int create() {
+
+        Punch punch = null;
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+
+                ps = conn.prepareStatement(QUERY_FIND);
+                
+
+                
+
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+        return punch.getId();
+
+    }
+
+    private Punch createFromQuery(ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
+        int terminalId = rs.getInt("terminalid");
+
+        BadgeDAO badgeDAO = daoFactory.getBadgeDAO();
+        Badge badge = badgeDAO.find(rs.getString("badgeid"));
+
+        LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime();
+        int eventTypeId = rs.getInt("eventtypeid");
+        EventType punchType = determinePunchType(eventTypeId);
+
+        return new Punch(id, terminalId, badge, timestamp, punchType);
     }
 
     private EventType determinePunchType(int id) {

@@ -9,26 +9,20 @@ import java.time.format.DateTimeFormatter;
 import com.github.cliftonlabs.json_simple.*;
 
 /**
- * 
- * Utility class for DAOs.  This is a final, non-constructable class containing
+ *
+ * Utility class for DAOs. This is a final, non-constructable class containing
  * common DAO logic and other repeated and/or standardized code, refactored into
  * individual static methods.
- * 
+ *
  */
 public final class DAOUtility {
+
+    private static Object jsonData;
     public static String getPunchListAsJSON(ArrayList<Punch> dailypunchlist){
-        ArrayList<HashMap<string, string="">> jsonData;
+        ArrayList<HashMap<String, String>> jsonData;
         
         /* HashMap*/
-        HashMap<string, string=""> punchData= new HashMap<>;
-        
-        HashMap<string, string=""> punchData= new HashMap<>;
-        
-        HashMap<string, string=""> punchData= new HashMap<>;
-        
-        HashMap<string, string=""> punchData= new HashMap<>;
-        
-        HashMap<string, string""> punchData= new HashMap<>;
+        HashMap<String, String>punchData = new HashMap<>();
         
         /* Punch Data*/
         punchData.put("id", String.valueof(punch.getId()));
@@ -47,14 +41,8 @@ public final class DAOUtility {
         
         /* Add HashMap to ArrayList*/
         jsonData.add(punchData);
-        jsonData.add(punchData);
-        jsonData.add(punchData);
-        jsonData.add(punchData);
-        jsonData.add(punchData);
-        jsonData.add(punchData);
-        jsonData.add(punchData);
+ 
         
         String json = Jsoner.serialize (jsonData);
     }
-
 }
