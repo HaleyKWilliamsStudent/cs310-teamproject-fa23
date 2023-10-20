@@ -3,11 +3,13 @@ package edu.jsu.mcis.cs310.tas_fa23.dao;
 import edu.jsu.mcis.cs310.tas_fa23.Badge;
 import edu.jsu.mcis.cs310.tas_fa23.EventType;
 import edu.jsu.mcis.cs310.tas_fa23.Punch;
+import edu.jsu.mcis.cs310.tas_fa23.Employee;
 import java.sql.Timestamp;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ public class PunchDAO {
 
     private static final String QUERY_FIND = "SELECT * FROM event WHERE id = ?";
     private static final String QUERY_LIST = "SELECT * FROM event WHERE badgeid = ? AND DATE(timestamp) = ? ORDER BY timestamp ASC";
+    private static final String QUERY_CREATE = "INSERT INTO event (terminalid, badgeid, timestamp, eventtypeid) VALUES (?, ?, ?, ?)";
 
     private final DAOFactory daoFactory;
 
@@ -170,12 +173,22 @@ public class PunchDAO {
         return punches;
     }
     
-    public int create() {
-
-        Punch punch = null;
+    public int create(Punch punch) {
 
         PreparedStatement ps = null;
         ResultSet rs = null;
+        int result = 0;
+        
+        EmployeeDAO employeeDao = daoFactory.getEmployeeDAO();
+        
+        Badge badge = punch.getBadge();
+        Employee employee = employeeDao.find(badge);
+        
+        int terminal = employee.getDepartment().getTerminalid();
+        
+        if(punch.getTerminalid() != terminal) {
+            return result;
+        }
 
         try {
 
@@ -183,10 +196,24 @@ public class PunchDAO {
 
             if (conn.isValid(0)) {
 
-                ps = conn.prepareStatement(QUERY_FIND);
+                ps = conn.prepareStatement(QUERY_CREATE, Statement.RETURN_GENERATED_KEYS);
                 
-
+                ps.setInt(1, employee.getDepartment().getTerminalid());
+                ps.setString(2, punch.getBadge().getId());
+                ps.setObject(3, punch.getOriginaltimestamp());
+                ps.setInt(4, getEventTypeId(punch));
                 
+                int updateCount = ps.executeUpdate();
+                
+                if(updateCount > 0) {
+                    
+                    rs = ps.getGeneratedKeys();
+                    
+                    if(rs.next()) {
+                        result = rs.getInt(1);        
+                    }
+                    
+                } 
 
             }
 
@@ -213,7 +240,7 @@ public class PunchDAO {
 
         }
 
-        return punch.getId();
+        return result;
 
     }
 
@@ -252,6 +279,27 @@ public class PunchDAO {
 
         return punchType;
 
+    }
+    
+    private int getEventTypeId(Punch punch) {
+        int eventtypeid;
+        
+        switch(punch.getPunchtype()) {
+            case CLOCK_OUT -> {
+                eventtypeid = 0;
+            }
+            case CLOCK_IN -> {
+                eventtypeid = 1;
+            }
+            case TIME_OUT -> {
+                eventtypeid = 2;
+            }
+            default  -> {
+                throw new IllegalStateException("Invalid punch type");
+            }
+        }
+        
+        return eventtypeid;
     }
 
 }
