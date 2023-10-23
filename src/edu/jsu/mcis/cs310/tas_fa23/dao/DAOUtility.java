@@ -8,6 +8,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import com.github.cliftonlabs.json_simple.*;
 import edu.jsu.mcis.cs310.tas_fa23.Punch;
+import edu.jsu.mcis.cs310.tas_fa23.Shift;
 
 /**
  *
@@ -24,9 +25,7 @@ public final class DAOUtility {
         for (Punch punch : dailypunchlist) {
             
             HashMap<String, String> punchData = new HashMap<>();
-            
-            System.out.println(punch);
-            
+                        
             punchData.put("id", String.valueOf(punch.getId()));
         
             punchData.put("terminalid", String.valueOf(punch.getTerminalid()));
@@ -53,5 +52,11 @@ public final class DAOUtility {
         String json = Jsoner.serialize (jsonData);
         
         return json;
+    }
+    public static int calculateTotalMinutes(ArrayList<Punch> dailypunchlist, Shift shift) {
+        int totalMinutes = 0;
+        /* *** This is the utility method for the backlog item "Add Utility Method to Calculate Total Minutes" in Canvas.
+        i.e., my code goes here. - William H. */
+        return totalMinutes;
     }
 }
