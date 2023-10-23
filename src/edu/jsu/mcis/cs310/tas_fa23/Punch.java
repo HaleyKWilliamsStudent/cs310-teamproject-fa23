@@ -112,6 +112,10 @@ public class Punch {
         return punchType;
     }
     
+    public PunchAdjustmentType getAdjustmentType() {
+        return adjustmenttype;
+    }
+    
     /**
      * Adjusts an Employees punch time either forward or backward
      * @param s The Shift that the Employee is punching in on
