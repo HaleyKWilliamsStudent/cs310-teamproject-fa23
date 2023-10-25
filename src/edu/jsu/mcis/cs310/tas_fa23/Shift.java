@@ -62,48 +62,47 @@ public class Shift {
      */
     public int getShiftDuration(LocalTime shiftstart, LocalTime shiftstop) {
         int minutes = (int)ChronoUnit.MINUTES.between(this.shiftstart, this.shiftstop);
-        this.shiftduration = minutes;
         return minutes;
     }
     
     public Integer getId() {
-        return this.id;
+        return id;
     }
     
     public String getDescription() {
-        return this.description;
+        return description;
     }
     
     public LocalTime getShiftStart() {
-        return this.shiftstart;
+        return shiftstart;
     }
     
     public LocalTime getShiftStop() {
-        return this.shiftstop;
+        return shiftstop;
     }
     
     public Integer getRoundInterval() {
-        return this.roundinterval;
+        return roundinterval;
     }
     
     public Integer getGracePeriod() {
-        return this.graceperiod;
+        return graceperiod;
     }
     
     public Integer getDockPenalty() {
-        return this.dockpenalty;
+        return dockpenalty;
     }
     
     public LocalTime getLunchStart() {
-        return this.lunchstart;
+        return lunchstart;
     }
     
     public LocalTime getLunchStop() {
-        return this.lunchstop;
+        return lunchstop;
     }
     
     public Integer getLunchThreshold() {
-        return this.lunchthreshold;
+        return lunchthreshold;
     }
     
     @Override
