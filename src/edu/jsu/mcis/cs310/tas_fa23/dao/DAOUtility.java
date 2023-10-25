@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import com.github.cliftonlabs.json_simple.*;
+import edu.jsu.mcis.cs310.tas_fa23.Punch;
+import edu.jsu.mcis.cs310.tas_fa23.Shift;
 
 /**
  *
@@ -17,32 +19,44 @@ import com.github.cliftonlabs.json_simple.*;
  */
 public final class DAOUtility {
 
-    private static Object jsonData;
     public static String getPunchListAsJSON(ArrayList<Punch> dailypunchlist){
-        ArrayList<HashMap<String, String>> jsonData;
+        ArrayList<HashMap<String, String>> jsonData = new ArrayList<>();
+                
+        for (Punch punch : dailypunchlist) {
+            
+            HashMap<String, String> punchData = new HashMap<>();
+                        
+            punchData.put("id", String.valueOf(punch.getId()));
         
-        /* HashMap*/
-        HashMap<String, String>punchData = new HashMap<>();
+            punchData.put("terminalid", String.valueOf(punch.getTerminalid()));
         
-        /* Punch Data*/
-        punchData.put("id", String.valueof(punch.getId()));
+            punchData.put("badgeid", punch.getBadge().getId());
         
-        punchData.put("terminalid", String.valueof(punch.getTerminalid()));
+            punchData.put("punchtype", punch.getPunchtype().toString());
         
-        punchData.put("badgeid", String.valueof(punch.getBadgeid()));
+            punchData.put("adjustmenttype", punch.getAdjustmentType().toString());
+            
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
+            
+            String adjustedtimestamp = punch.getAdjustedtimestamp().format(formatter).toUpperCase();
+            
+            punchData.put("adjustedtimestamp", adjustedtimestamp);
         
-        punchData.put("punchtype", punchType.toString());
-        
-        punchData.put("adjustmenttype", adjustmenttype.toString());
-        
-        punchData.put("adjustedtimestamp", adjustmentTimestamp.printAdjusted());
-        
-        punchData.put("originaltimestamp", originalTimestamp.printOriginal());
-        
-        /* Add HashMap to ArrayList*/
-        jsonData.add(punchData);
- 
-        
+            String originaltimestamp = punch.getOriginaltimestamp().format(formatter).toUpperCase();
+            
+            punchData.put("originaltimestamp", originaltimestamp);
+            
+            jsonData.add(punchData);
+        }
+                 
         String json = Jsoner.serialize (jsonData);
+        
+        return json;
+    }
+    public static int calculateTotalMinutes(ArrayList<Punch> dailypunchlist, Shift shift) {
+        int totalMinutes = 0;
+        /* *** This is the utility method for the backlog item "Add Utility Method to Calculate Total Minutes" in Canvas.
+        i.e., my code goes here. - William H. */
+        return totalMinutes;
     }
 }
