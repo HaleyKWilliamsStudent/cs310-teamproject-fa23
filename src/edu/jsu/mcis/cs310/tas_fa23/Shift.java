@@ -22,8 +22,8 @@ public class Shift {
     private final LocalTime lunchstart;
     private final LocalTime lunchstop;
     private final Integer lunchthreshold;
-    private int lunchduration;
-    private int shiftduration;
+    private final int lunchduration;
+    private final int shiftduration;
     
     /**
      * 
@@ -38,31 +38,26 @@ public class Shift {
         this.graceperiod = (Integer)shiftMap.get("graceperiod");
         this.dockpenalty = (Integer)shiftMap.get("dockpenalty");
         this.lunchstart = (LocalTime)shiftMap.get("lunchstart");
-        this.lunchstop = (LocalTime)shiftMap.get("lunchstop");   
+        this.lunchstop = (LocalTime)shiftMap.get("lunchstop");
         this.lunchthreshold = (Integer)shiftMap.get("lunchthreshold");
+        this.shiftduration = (int)ChronoUnit.MINUTES.between(shiftstart, shiftstop);
+        this.lunchduration = (int)ChronoUnit.MINUTES.between(lunchstart, lunchstop);
     }
     
     /**
      * 
-     * @param lunchstart
-     * @param lunchstop
-     * @return Returns a long containing the number of minutes in a lunch break
+     * @return Returns an int containing the number of minutes in a lunch break
      */
-    public int getLunchDuration(LocalTime lunchstart, LocalTime lunchstop) {
-        int minutes = (int)ChronoUnit.MINUTES.between(this.lunchstart, this.lunchstop);
-        this.lunchduration = minutes;
-        return minutes;
+    public int getLunchDuration() {
+        return lunchduration;
     }
     
     /**
      * 
-     * @param shiftstart
-     * @param shiftstop
-     * @return Returns a long containing the number of minutes in a shift
+     * @return Returns an int containing the number of minutes in a shift
      */
-    public int getShiftDuration(LocalTime shiftstart, LocalTime shiftstop) {
-        int minutes = (int)ChronoUnit.MINUTES.between(this.shiftstart, this.shiftstop);
-        return minutes;
+    public int getShiftDuration() {
+        return shiftduration;
     }
     
     public Integer getId() {
@@ -113,9 +108,9 @@ public class Shift {
         StringBuilder s = new StringBuilder();
         s.append(description).append(": ");
         s.append(shiftstart).append(" - ").append(shiftstop);
-        s.append(" (").append(getShiftDuration(shiftstart, shiftstop)).append(" minutes); Lunch: ");
+        s.append(" (").append(shiftduration).append(" minutes); Lunch: ");
         s.append(lunchstart).append(" - ").append(lunchstop).append(" (");
-        s.append(getLunchDuration(lunchstart, lunchstop)).append(" minutes)");
+        s.append(lunchduration).append(" minutes)");
         return s.toString();
     }
     

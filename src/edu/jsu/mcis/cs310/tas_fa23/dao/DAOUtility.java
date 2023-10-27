@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import com.github.cliftonlabs.json_simple.*;
 import edu.jsu.mcis.cs310.tas_fa23.Punch;
 import edu.jsu.mcis.cs310.tas_fa23.Shift;
+import edu.jsu.mcis.cs310.tas_fa23.EventType;
 
 /**
  *
@@ -53,10 +54,26 @@ public final class DAOUtility {
         
         return json;
     }
+    
     public static int calculateTotalMinutes(ArrayList<Punch> dailypunchlist, Shift shift) {
         int totalMinutes = 0;
-        /* *** This is the utility method for the backlog item "Add Utility Method to Calculate Total Minutes" in Canvas.
-        i.e., my code goes here. - William H. */
+        
+        LocalDateTime clockin;
+        LocalDateTime clockout;
+        
+        // Create pairs of clock in and clock out punches
+        for(int i = 1; i < dailypunchlist.size(); i+=2) {
+            if(dailypunchlist.get(i).getPunchtype() == EventType.CLOCK_OUT) {
+                clockin = dailypunchlist.get(i-1).getAdjustedtimestamp();
+                clockout = dailypunchlist.get(i).getAdjustedtimestamp();
+                totalMinutes += ChronoUnit.MINUTES.between(clockin, clockout);
+            }
+        }
+        
+        if(dailypunchlist.size() < 3 && totalMinutes > shift.getLunchThreshold()) {
+            totalMinutes -= shift.getLunchDuration();
+        }
+  
         return totalMinutes;
     }
 }
