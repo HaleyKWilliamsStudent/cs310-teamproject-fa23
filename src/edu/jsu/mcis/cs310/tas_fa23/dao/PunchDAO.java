@@ -13,6 +13,8 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PunchDAO {
 
@@ -172,6 +174,27 @@ public class PunchDAO {
 
         return punches;
     }
+    
+    public ArrayList<Punch> list(Badge badge, LocalDate begin, LocalDate end) {
+        ArrayList<Punch> punches = new ArrayList<>();
+        Map<Integer, Punch> addedPunches = new HashMap<>();
+
+        for (LocalDate date = begin; !date.isAfter(end); date = date.plusDays(1)) {
+            ArrayList<Punch> dailyPunches = list(badge, date);
+
+            if (!dailyPunches.isEmpty()) {
+                for (Punch punch : dailyPunches) {
+                    if (!addedPunches.containsKey(punch.getId())) {
+                        punches.add(punch);
+                        addedPunches.put(punch.getId(), punch);
+                    }
+                }
+            }
+        }
+
+        return punches;
+    }
+
     
     public int create(Punch punch) {
 

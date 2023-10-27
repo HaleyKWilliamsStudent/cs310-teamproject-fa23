@@ -20,38 +20,38 @@ import edu.jsu.mcis.cs310.tas_fa23.EventType;
  */
 public final class DAOUtility {
 
-    public static String getPunchListAsJSON(ArrayList<Punch> dailypunchlist){
+    public static String getPunchListAsJSON(ArrayList<Punch> dailypunchlist) {
         ArrayList<HashMap<String, String>> jsonData = new ArrayList<>();
-                
+
         for (Punch punch : dailypunchlist) {
-            
+
             HashMap<String, String> punchData = new HashMap<>();
-                        
+
             punchData.put("id", String.valueOf(punch.getId()));
-        
+
             punchData.put("terminalid", String.valueOf(punch.getTerminalid()));
-        
+
             punchData.put("badgeid", punch.getBadge().getId());
-        
+
             punchData.put("punchtype", punch.getPunchtype().toString());
-        
+
             punchData.put("adjustmenttype", punch.getAdjustmentType().toString());
-            
+
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
-            
+
             String adjustedtimestamp = punch.getAdjustedtimestamp().format(formatter).toUpperCase();
-            
+
             punchData.put("adjustedtimestamp", adjustedtimestamp);
-        
+
             String originaltimestamp = punch.getOriginaltimestamp().format(formatter).toUpperCase();
-            
+
             punchData.put("originaltimestamp", originaltimestamp);
-            
+
             jsonData.add(punchData);
         }
-                 
-        String json = Jsoner.serialize (jsonData);
-        
+
+        String json = Jsoner.serialize(jsonData);
+
         return json;
     }
     
@@ -73,7 +73,7 @@ public final class DAOUtility {
         if(dailypunchlist.size() < 3 && totalMinutes > shift.getLunchThreshold()) {
             totalMinutes -= shift.getLunchDuration();
         }
-  
+        
         return totalMinutes;
     }
 }
