@@ -32,8 +32,5 @@ public class Main {
         int punchid = punchDao.create(p1);
         
         System.err.println(punchid);
-                
-        System.err.println(LocalDateTime.now());
     }
-
 }
