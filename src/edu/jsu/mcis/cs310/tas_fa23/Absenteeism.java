@@ -2,6 +2,7 @@ package edu.jsu.mcis.cs310.tas_fa23;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Absenteeism {
     
@@ -25,6 +26,19 @@ public class Absenteeism {
 
     public BigDecimal getAbsenteeism() {
         return absenteeism;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("#").append(employee.getBadge().getId());
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        
+        sb.append(" (Pay Period Starting ").append(payPeriodStart.format(formatter)).append("): ");
+        sb.append(absenteeism).append("%");
+        
+        return sb.toString();
     }
     
 }
