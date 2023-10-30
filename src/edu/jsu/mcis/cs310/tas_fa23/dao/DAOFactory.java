@@ -51,5 +51,9 @@ public final class DAOFactory {
     public ShiftDAO getShiftDAO() {
         return new ShiftDAO(this);
     }
+    
+    public Absenteeism getAbsenteeismDAO(){
+        return new AbsenteeismDAO();
+    }
 
 }
