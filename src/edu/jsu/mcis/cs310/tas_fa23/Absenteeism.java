@@ -7,33 +7,35 @@ import java.time.format.DateTimeFormatter;
 public class Absenteeism {
     
     private final Employee employee;
-    private final LocalDate payPeriodStart;
-    private final BigDecimal absenteeism;
+    private final LocalDate payperiod;
+    private final BigDecimal percentage;
     
     public Absenteeism(Employee employee, LocalDate payPeriodStart, BigDecimal absenteeism) {
         this.employee = employee;
-        this.payPeriodStart = payPeriodStart;
-        this.absenteeism = absenteeism;
+        this.payperiod = payPeriodStart;
+        this.percentage = absenteeism;
     }
 
     public Employee getEmployee() {
         return employee;
     }
 
-    public LocalDate getPayPeriodStart() {
-        return payPeriodStart;
+    public LocalDate getPayperiod() {
+        return payperiod;
     }
 
-    public BigDecimal getAbsenteeism() {
-        return absenteeism;
+    public BigDecimal getPercentage() {
+        return percentage;
     }
     
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("#").append(employee.getBadge().getId());        
-        sb.append(" (Pay Period Starting ").append(payPeriodStart).append("): ");
-        sb.append(absenteeism).append("%");
+        sb.append("#").append(employee.getBadge().getId());  
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+        sb.append(" (Pay Period Starting ").append(payperiod.format(formatter)).append("): ");
+                
+        sb.append(percentage).append("%");
         
         return sb.toString();
     }
