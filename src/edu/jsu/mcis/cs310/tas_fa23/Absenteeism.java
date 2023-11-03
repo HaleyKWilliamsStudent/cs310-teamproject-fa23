@@ -1,8 +1,10 @@
 package edu.jsu.mcis.cs310.tas_fa23;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 
 public class Absenteeism {
     
@@ -19,7 +21,7 @@ public class Absenteeism {
     
     public Absenteeism(Employee employee, LocalDate payPeriodStart, BigDecimal absenteeism) {
         this.employee = employee;
-        this.payperiod = payPeriodStart;
+        this.payperiod = payPeriodStart.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
         this.percentage = absenteeism;
     }
 
