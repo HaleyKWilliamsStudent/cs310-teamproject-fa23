@@ -15,13 +15,13 @@ public class Absenteeism {
     /**
      * Creates a new Absenteeism object
      * @param employee
-     * @param payPeriodStart
+     * @param payperiod
      * @param absenteeism 
      */
     
-    public Absenteeism(Employee employee, LocalDate payPeriodStart, BigDecimal absenteeism) {
+    public Absenteeism(Employee employee, LocalDate payperiod, BigDecimal absenteeism) {
         this.employee = employee;
-        this.payperiod = payPeriodStart.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+        this.payperiod = payperiod.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
         this.percentage = absenteeism;
     }
 
