@@ -224,7 +224,7 @@ public class PunchDAO {
                 ps.setInt(1, employee.getDepartment().getTerminalid());
                 ps.setString(2, punch.getBadge().getId());
                 ps.setObject(3, punch.getOriginaltimestamp());
-                ps.setInt(4, getEventTypeId(punch));
+                ps.setInt(4, punch.getPunchtype().ordinal());
                 
                 int updateCount = ps.executeUpdate();
                 
@@ -276,53 +276,8 @@ public class PunchDAO {
 
         LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime();
         int eventTypeId = rs.getInt("eventtypeid");
-        EventType punchType = determinePunchType(eventTypeId);
+        EventType punchType = EventType.values()[eventTypeId];
 
         return new Punch(id, terminalId, badge, timestamp, punchType);
     }
-
-    private EventType determinePunchType(int id) {
-
-        EventType punchType = null;
-
-        switch (id) {
-            case 0 -> {
-                punchType = EventType.CLOCK_OUT;
-            }
-            case 1 -> {
-                punchType = EventType.CLOCK_IN;
-            }
-            case 2 -> {
-                punchType = EventType.TIME_OUT;
-            }
-            default -> {
-                throw new IllegalStateException("Invalid Id");
-            }
-        }
-
-        return punchType;
-
-    }
-    
-    private int getEventTypeId(Punch punch) {
-        int eventtypeid;
-        
-        switch(punch.getPunchtype()) {
-            case CLOCK_OUT -> {
-                eventtypeid = 0;
-            }
-            case CLOCK_IN -> {
-                eventtypeid = 1;
-            }
-            case TIME_OUT -> {
-                eventtypeid = 2;
-            }
-            default  -> {
-                throw new IllegalStateException("Invalid punch type");
-            }
-        }
-        
-        return eventtypeid;
-    }
-
 }
