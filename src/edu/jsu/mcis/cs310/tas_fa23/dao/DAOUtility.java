@@ -1,7 +1,6 @@
 package edu.jsu.mcis.cs310.tas_fa23.dao;
 
 import java.time.*;
-import java.util.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.time.temporal.ChronoUnit;
@@ -54,6 +53,13 @@ public final class DAOUtility {
 
         return json;
     }
+    
+    /**
+     * Calculates the total minutes that an Employee works given a list of their punches.
+     * @param dailypunchlist
+     * @param shift
+     * @return An int representing the number of minutes worked.
+     */
     
     public static int calculateTotalMinutes(ArrayList<Punch> dailypunchlist, Shift shift) {
         int totalMinutes = 0;

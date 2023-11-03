@@ -21,6 +21,13 @@ public class AbsenteeismDAO {
         this.daoFactory = daofactory;
     }
 
+    /**
+     * Searches the "absenteeism" table for a certain employee's absenteeism.
+     * @param employee
+     * @param payperiod
+     * @return A Absenteeism object for the given employee.
+     */
+    
     public Absenteeism find(Employee employee, LocalDate payperiod) {
         Absenteeism absenteeism = null;
         PreparedStatement ps = null;
@@ -33,20 +40,15 @@ public class AbsenteeismDAO {
             if (conn.isValid(0)) {
 
                 ps = conn.prepareStatement(QUERY_FIND);
+                ps.setInt(1, employee.getId());
 
-                boolean hasresults = ps.execute();
+                rs = ps.executeQuery();
 
-                if (hasresults) {
+                if (rs.next()) {
 
-                    rs = ps.getResultSet();
+                    double percentage = rs.getDouble("percentage");
 
-                    if (rs.next()) {
-                        
-                        double percentage = rs.getDouble("percentage");
-                        
-                        absenteeism = new Absenteeism(employee, payperiod, BigDecimal.valueOf(percentage));
-
-                    }
+                    absenteeism = new Absenteeism(employee, payperiod, BigDecimal.valueOf(percentage));
 
                 }
 
@@ -76,6 +78,11 @@ public class AbsenteeismDAO {
         }
         return absenteeism;
     }
+    
+    /**
+     * Inserts a new Absenteeism object into the absenteeism table.
+     * @param absenteeism 
+     */
 
     public void create(Absenteeism absenteeism) {
 

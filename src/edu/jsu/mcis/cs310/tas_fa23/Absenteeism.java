@@ -10,6 +10,13 @@ public class Absenteeism {
     private final LocalDate payperiod;
     private final BigDecimal percentage;
     
+    /**
+     * Creates a new Absenteeism object
+     * @param employee
+     * @param payPeriodStart
+     * @param absenteeism 
+     */
+    
     public Absenteeism(Employee employee, LocalDate payPeriodStart, BigDecimal absenteeism) {
         this.employee = employee;
         this.payperiod = payPeriodStart;
