@@ -10,6 +10,7 @@ import com.github.cliftonlabs.json_simple.*;
 import edu.jsu.mcis.cs310.tas_fa23.Punch;
 import edu.jsu.mcis.cs310.tas_fa23.Shift;
 import edu.jsu.mcis.cs310.tas_fa23.EventType;
+import edu.jsu.mcis.cs310.tas_fa23.PunchAdjustmentType;
 
 /**
  *
@@ -55,23 +56,50 @@ public final class DAOUtility {
         return json;
     }
     
-    public static int calculateTotalMinutes(ArrayList<Punch> dailypunchlist, Shift shift) {
+    public static int calculateTotalMinutes(ArrayList<Punch> punchlist, Shift shift) {
         int totalMinutes = 0;
+        int dayTotal = 0;
         
         LocalDateTime clockin;
         LocalDateTime clockout;
         
-        // Create pairs of clock in and clock out punches
-        for(int i = 1; i < dailypunchlist.size(); i+=2) {
-            if(dailypunchlist.get(i).getPunchtype() == EventType.CLOCK_OUT) {
-                clockin = dailypunchlist.get(i-1).getAdjustedtimestamp();
-                clockout = dailypunchlist.get(i).getAdjustedtimestamp();
-                totalMinutes += ChronoUnit.MINUTES.between(clockin, clockout);
-            }
-        }
+        boolean isNewDay;
+        boolean clockedOut = false;
         
-        if(dailypunchlist.size() < 3 && totalMinutes > shift.getLunchThreshold()) {
-            totalMinutes -= shift.getLunchDuration();
+        for(int i = 1; i < punchlist.size(); i++) {
+            if(ChronoUnit.HOURS.between(punchlist.get(i-1).getAdjustedtimestamp(), punchlist.get(i).getAdjustedtimestamp()) > 12) {
+                isNewDay = true;
+                totalMinutes += dayTotal;
+                dayTotal = 0;
+            } else {
+                isNewDay = false;
+            }
+            
+            if(punchlist.get(i).getPunchtype() == EventType.CLOCK_OUT) {
+                clockin = punchlist.get(i-1).getAdjustedtimestamp();
+                clockout = punchlist.get(i).getAdjustedtimestamp();
+                dayTotal += ChronoUnit.MINUTES.between(clockin, clockout);
+                System.out.println("Day total: " + dayTotal);
+                if(punchlist.get(i).getAdjustmentType() == PunchAdjustmentType.LUNCH_START) {
+                    clockedOut = true;
+                }
+            } else {
+                continue;
+            }
+            
+            if(!isNewDay && dayTotal > shift.getLunchThreshold() && clockedOut) {
+                dayTotal -= shift.getLunchDuration();
+                System.out.println("subtract 30 = " + dayTotal);
+            } 
+            
+            if(isNewDay) {
+                totalMinutes += dayTotal;
+                System.out.println("Total v1: " + totalMinutes);
+            } else if(i == punchlist.size() - 1) {
+                totalMinutes += dayTotal;
+                System.out.println("Total v2: " + totalMinutes);
+            } 
+            clockedOut = false;
         }
         
         return totalMinutes;

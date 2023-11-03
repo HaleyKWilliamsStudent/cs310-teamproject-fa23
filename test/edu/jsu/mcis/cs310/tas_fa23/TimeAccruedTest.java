@@ -37,6 +37,7 @@ public class TimeAccruedTest {
 
         for (Punch punch : dailypunchlist) {
             punch.adjust(s);
+            System.out.println(punch.printAdjusted());
         }
 
         /* Compute Pay Period Total */
