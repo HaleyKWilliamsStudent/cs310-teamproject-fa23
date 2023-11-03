@@ -2,6 +2,7 @@ package edu.jsu.mcis.cs310.tas_fa23.dao;
 
 import edu.jsu.mcis.cs310.tas_fa23.Absenteeism;
 import edu.jsu.mcis.cs310.tas_fa23.Employee;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,7 +11,7 @@ import java.time.LocalDate;
 
 public class AbsenteeismDAO {
 
-    private static final String QUERY_FIND = "SELECT * FROM absenteesim WHERE employeeid = ? ";
+    private static final String QUERY_FIND = "SELECT * FROM absenteeism WHERE employeeid = ? ";
     private static final String QUERY_CREATE = "INSERT INTO absenteeism (employeeid, payperiod, percentage) VALUES (?, ?, ?)";
     private static final String QUERY_UPDATE = "UPDATE absenteeism SET payperiod = ?, percentage = ? WHERE employeeid = ?";
 
@@ -20,7 +21,7 @@ public class AbsenteeismDAO {
         this.daoFactory = daofactory;
     }
 
-    public Absenteeism find(Employee employee, LocalDate payPeriodStart) {
+    public Absenteeism find(Employee employee, LocalDate payperiod) {
         Absenteeism absenteeism = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -41,7 +42,9 @@ public class AbsenteeismDAO {
 
                     if (rs.next()) {
                         
-                        absenteeism = createFromQuery(hasresults);
+                        double percentage = rs.getDouble("percentage");
+                        
+                        absenteeism = new Absenteeism(employee, payperiod, BigDecimal.valueOf(percentage));
 
                     }
 
