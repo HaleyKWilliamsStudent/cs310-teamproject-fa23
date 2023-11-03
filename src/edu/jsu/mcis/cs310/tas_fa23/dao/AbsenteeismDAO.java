@@ -10,7 +10,7 @@ import java.time.LocalDate;
 
 public class AbsenteeismDAO {
 
-    private static final String QUERY_FIND = "SELECT * FROM absenteesim WHERE ";
+    private static final String QUERY_FIND = "SELECT * FROM absenteesim WHERE employeeid = ? ";
     private static final String QUERY_CREATE = "INSERT INTO absenteeism (employeeid, payperiod, percentage) VALUES (?, ?, ?)";
     private static final String QUERY_UPDATE = "UPDATE absenteeism SET payperiod = ?, percentage = ? WHERE employeeid = ?";
 
@@ -40,6 +40,8 @@ public class AbsenteeismDAO {
                     rs = ps.getResultSet();
 
                     if (rs.next()) {
+                        
+                        absenteeism = createFromQuery(hasresults);
 
                     }
 
