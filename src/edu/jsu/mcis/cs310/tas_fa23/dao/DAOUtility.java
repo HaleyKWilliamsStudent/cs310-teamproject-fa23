@@ -9,6 +9,7 @@ import com.github.cliftonlabs.json_simple.*;
 import edu.jsu.mcis.cs310.tas_fa23.Punch;
 import edu.jsu.mcis.cs310.tas_fa23.Shift;
 import edu.jsu.mcis.cs310.tas_fa23.EventType;
+import edu.jsu.mcis.cs310.tas_fa23.PunchAdjustmentType;
 
 /**
  *
@@ -54,30 +55,47 @@ public final class DAOUtility {
         return json;
     }
     
-    /**
-     * Calculates the total minutes that an Employee works given a list of their punches.
-     * @param dailypunchlist
-     * @param shift
-     * @return An int representing the number of minutes worked.
-     */
-    
-    public static int calculateTotalMinutes(ArrayList<Punch> dailypunchlist, Shift shift) {
+    public static int calculateTotalMinutes(ArrayList<Punch> punchlist, Shift shift) {
         int totalMinutes = 0;
+        int dayTotal = 0;
         
         LocalDateTime clockin;
         LocalDateTime clockout;
         
-        // Create pairs of clock in and clock out punches
-        for(int i = 1; i < dailypunchlist.size(); i+=2) {
-            if(dailypunchlist.get(i).getPunchtype() == EventType.CLOCK_OUT) {
-                clockin = dailypunchlist.get(i-1).getAdjustedtimestamp();
-                clockout = dailypunchlist.get(i).getAdjustedtimestamp();
-                totalMinutes += ChronoUnit.MINUTES.between(clockin, clockout);
-            }
-        }
+        boolean isNewDay;
+        boolean clockedOut = false;
         
-        if(dailypunchlist.size() < 3 && totalMinutes > shift.getLunchThreshold()) {
-            totalMinutes -= shift.getLunchDuration();
+        for(int i = 1; i < punchlist.size(); i++) {
+            if(ChronoUnit.DAYS.between(punchlist.get(i-1).getAdjustedtimestamp().toLocalDate(), punchlist.get(i).getAdjustedtimestamp().toLocalDate()) > 0) {
+                isNewDay = true;
+                totalMinutes += dayTotal;
+                dayTotal = 0;
+                clockedOut = false;
+            } else {
+                isNewDay = false;
+            }
+            
+            if(punchlist.get(i).getPunchtype() == EventType.CLOCK_OUT) {
+                clockin = punchlist.get(i-1).getAdjustedtimestamp();
+                clockout = punchlist.get(i).getAdjustedtimestamp();
+                dayTotal += ChronoUnit.MINUTES.between(clockin, clockout);
+                if(punchlist.get(i).getAdjustmentType() == PunchAdjustmentType.LUNCH_START) {
+                    clockedOut = true;
+                }
+            } else {
+                continue;
+            }
+            
+            if(!isNewDay && dayTotal > shift.getLunchThreshold() && !clockedOut) {
+                dayTotal -= shift.getLunchDuration();
+            } 
+            
+            if(isNewDay) {
+                totalMinutes += dayTotal;
+            } else if(i == punchlist.size() - 1) {
+                totalMinutes += dayTotal;
+            } 
+            
         }
         
         return totalMinutes;
