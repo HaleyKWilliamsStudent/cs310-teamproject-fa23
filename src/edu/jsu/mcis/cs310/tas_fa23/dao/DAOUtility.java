@@ -67,10 +67,11 @@ public final class DAOUtility {
         boolean clockedOut = false;
         
         for(int i = 1; i < punchlist.size(); i++) {
-            if(ChronoUnit.HOURS.between(punchlist.get(i-1).getAdjustedtimestamp(), punchlist.get(i).getAdjustedtimestamp()) > 12) {
+            if(ChronoUnit.DAYS.between(punchlist.get(i-1).getAdjustedtimestamp().toLocalDate(), punchlist.get(i).getAdjustedtimestamp().toLocalDate()) > 0) {
                 isNewDay = true;
                 totalMinutes += dayTotal;
                 dayTotal = 0;
+                clockedOut = false;
             } else {
                 isNewDay = false;
             }
@@ -79,7 +80,6 @@ public final class DAOUtility {
                 clockin = punchlist.get(i-1).getAdjustedtimestamp();
                 clockout = punchlist.get(i).getAdjustedtimestamp();
                 dayTotal += ChronoUnit.MINUTES.between(clockin, clockout);
-                System.out.println("Day total: " + dayTotal);
                 if(punchlist.get(i).getAdjustmentType() == PunchAdjustmentType.LUNCH_START) {
                     clockedOut = true;
                 }
@@ -87,19 +87,16 @@ public final class DAOUtility {
                 continue;
             }
             
-            if(!isNewDay && dayTotal > shift.getLunchThreshold() && clockedOut) {
+            if(!isNewDay && dayTotal > shift.getLunchThreshold() && !clockedOut) {
                 dayTotal -= shift.getLunchDuration();
-                System.out.println("subtract 30 = " + dayTotal);
             } 
             
             if(isNewDay) {
                 totalMinutes += dayTotal;
-                System.out.println("Total v1: " + totalMinutes);
             } else if(i == punchlist.size() - 1) {
                 totalMinutes += dayTotal;
-                System.out.println("Total v2: " + totalMinutes);
             } 
-            clockedOut = false;
+            
         }
         
         return totalMinutes;
