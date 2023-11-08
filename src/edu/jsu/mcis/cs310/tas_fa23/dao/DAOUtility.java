@@ -56,19 +56,19 @@ public final class DAOUtility {
 
         return json;
     }
-    
+
     public static int calculateTotalMinutes(ArrayList<Punch> punchlist, Shift shift) {
         int totalMinutes = 0;
         int dayTotal = 0;
-        
+
         LocalDateTime clockin;
         LocalDateTime clockout;
-        
+
         boolean isNewDay;
         boolean clockedOut = false;
-        
-        for(int i = 1; i < punchlist.size(); i++) {
-            if(ChronoUnit.DAYS.between(punchlist.get(i-1).getAdjustedtimestamp().toLocalDate(), punchlist.get(i).getAdjustedtimestamp().toLocalDate()) > 0) {
+
+        for (int i = 1; i < punchlist.size(); i++) {
+            if (ChronoUnit.DAYS.between(punchlist.get(i - 1).getAdjustedtimestamp().toLocalDate(), punchlist.get(i).getAdjustedtimestamp().toLocalDate()) > 0) {
                 isNewDay = true;
                 totalMinutes += dayTotal;
                 dayTotal = 0;
@@ -76,40 +76,81 @@ public final class DAOUtility {
             } else {
                 isNewDay = false;
             }
-            
-            if(punchlist.get(i).getPunchtype() == EventType.CLOCK_OUT) {
-                clockin = punchlist.get(i-1).getAdjustedtimestamp();
+
+            if (punchlist.get(i).getPunchtype() == EventType.CLOCK_OUT) {
+                clockin = punchlist.get(i - 1).getAdjustedtimestamp();
                 clockout = punchlist.get(i).getAdjustedtimestamp();
                 dayTotal += ChronoUnit.MINUTES.between(clockin, clockout);
-                if(punchlist.get(i).getAdjustmentType() == PunchAdjustmentType.LUNCH_START) {
+                if (punchlist.get(i).getAdjustmentType() == PunchAdjustmentType.LUNCH_START) {
                     clockedOut = true;
                 }
             } else {
                 continue;
             }
-            
-            if(!isNewDay && dayTotal > shift.getLunchThreshold() && !clockedOut) {
+
+            if (!isNewDay && dayTotal > shift.getLunchThreshold() && !clockedOut) {
                 dayTotal -= shift.getLunchDuration();
-            } 
-            
-            if(isNewDay) {
+            }
+
+            if (isNewDay) {
                 totalMinutes += dayTotal;
-            } else if(i == punchlist.size() - 1) {
+            } else if (i == punchlist.size() - 1) {
                 totalMinutes += dayTotal;
-            } 
-            
+            }
+
         }
-        
+
         return totalMinutes;
     }
-    
+
     public static BigDecimal calculateAbsenteeism(ArrayList<Punch> punchlist, Shift s) {
         int minutesWorked = calculateTotalMinutes(punchlist, s);
-        
+
         int expectedMinutes = (s.getShiftDuration() * 5) - (s.getLunchDuration() * 5);
-        
+
         double percentage = ((double) minutesWorked / expectedMinutes);
-                
-        return BigDecimal.valueOf((1 - percentage) * 100);
+
+        return BigDecimal.valueOf((1 - percentage) * 100).setScale(2);
+    }
+
+    public static String getPunchListPlusTotalsAsJSON(ArrayList<Punch> punchlist, Shift shift) {
+        ArrayList<HashMap<String, String>> jsonData = new ArrayList<>();
+
+        for (Punch punch : punchlist) {
+
+            HashMap<String, String> punchData = new HashMap<>();
+
+            punchData.put("id", String.valueOf(punch.getId()));
+
+            punchData.put("terminalid", String.valueOf(punch.getTerminalid()));
+
+            punchData.put("badgeid", punch.getBadge().getId());
+
+            punchData.put("punchtype", punch.getPunchtype().toString());
+
+            punchData.put("adjustmenttype", punch.getAdjustmentType().toString());
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
+
+            String adjustedtimestamp = punch.getAdjustedtimestamp().format(formatter).toUpperCase();
+
+            punchData.put("adjustedtimestamp", adjustedtimestamp);
+
+            String originaltimestamp = punch.getOriginaltimestamp().format(formatter).toUpperCase();
+
+            punchData.put("originaltimestamp", originaltimestamp);
+
+            jsonData.add(punchData);
+        }
+        
+        HashMap<String, Object> total = new HashMap<>();
+        
+        total.put("absenteeism", calculateAbsenteeism(punchlist, shift));
+        total.put("totalminutes", calculateTotalMinutes(punchlist, shift));
+        total.put("punchlist", jsonData);
+        
+        String json = Jsoner.serialize(total);
+
+        return json;
     }
 }
