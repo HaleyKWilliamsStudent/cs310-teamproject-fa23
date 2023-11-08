@@ -6,7 +6,9 @@ import java.sql.*;
 public class BadgeDAO {
 
     private static final String QUERY_FIND = "SELECT * FROM badge WHERE id = ?";
-
+    private static final String QUERY_CREATE = "INSERT INTO badge (id, description) VALUES (?, ?)";
+    private static final String QUERY_DELETE = "DELETE FROM badge WHERE id = ?";
+    
     private final DAOFactory daoFactory;
 
     BadgeDAO(DAOFactory daoFactory) {
@@ -75,4 +77,96 @@ public class BadgeDAO {
 
     }
 
+    public boolean create(Badge badge) {
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        boolean success = false;
+
+        try {
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+                ps = conn.prepareStatement(QUERY_CREATE);
+                ps.setString(1, badge.getId());
+                ps.setString(2, badge.getDescription());
+                
+                int rows = ps.executeUpdate();
+                
+                if (rows == 1) {
+                    success = true;
+                }
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+        return success;
+    }
+
+        public boolean delete(String badgeId) {
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        boolean success = false;
+
+        try {
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+                ps = conn.prepareStatement(QUERY_DELETE);
+                ps.setString(1, badgeId);
+                
+                int rows = ps.executeUpdate();
+                
+                if (rows == 1) {
+                    success = true;
+                }
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+        return success;
+    }
 }
