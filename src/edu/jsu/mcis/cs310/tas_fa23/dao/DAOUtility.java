@@ -10,6 +10,8 @@ import edu.jsu.mcis.cs310.tas_fa23.Punch;
 import edu.jsu.mcis.cs310.tas_fa23.Shift;
 import edu.jsu.mcis.cs310.tas_fa23.EventType;
 import edu.jsu.mcis.cs310.tas_fa23.PunchAdjustmentType;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  *
@@ -99,5 +101,15 @@ public final class DAOUtility {
         }
         
         return totalMinutes;
+    }
+    
+    public static BigDecimal calculateAbsenteeism(ArrayList<Punch> punchlist, Shift s) {
+        int minutesWorked = calculateTotalMinutes(punchlist, s);
+        
+        int expectedMinutes = (s.getShiftDuration() * 5) - (s.getLunchDuration() * 5);
+        
+        double percentage = ((double) minutesWorked / expectedMinutes);
+                
+        return BigDecimal.valueOf((1 - percentage) * 100);
     }
 }

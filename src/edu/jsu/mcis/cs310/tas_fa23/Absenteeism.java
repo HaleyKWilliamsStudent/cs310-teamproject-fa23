@@ -1,6 +1,7 @@
 package edu.jsu.mcis.cs310.tas_fa23;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -22,7 +23,7 @@ public class Absenteeism {
     public Absenteeism(Employee employee, LocalDate payperiod, BigDecimal absenteeism) {
         this.employee = employee;
         this.payperiod = payperiod.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        this.percentage = absenteeism;
+        this.percentage = absenteeism.setScale(2, RoundingMode.HALF_UP);
     }
 
     public Employee getEmployee() {

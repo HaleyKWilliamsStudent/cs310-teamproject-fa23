@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 
 public class AbsenteeismDAO {
@@ -48,13 +47,8 @@ public class AbsenteeismDAO {
                 if (rs.next()) {
 
                     double percentage = rs.getDouble("percentage");
-                    
-                    DecimalFormat df = new DecimalFormat("#0.00");
-                    String formattedPercent = df.format(percentage);
-                    
-                    BigDecimal bigPercentage = new BigDecimal(formattedPercent);
 
-                    absenteeism = new Absenteeism(employee, payperiod, bigPercentage);
+                    absenteeism = new Absenteeism(employee, payperiod, BigDecimal.valueOf(percentage));
 
                 }
 
