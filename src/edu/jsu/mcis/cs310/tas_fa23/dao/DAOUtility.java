@@ -113,43 +113,14 @@ public final class DAOUtility {
         return BigDecimal.valueOf((1 - percentage) * 100).setScale(2);
     }
 
-    public static String getPunchListPlusTotalsAsJSON(ArrayList<Punch> punchlist, Shift shift) {
-        ArrayList<HashMap<String, String>> jsonData = new ArrayList<>();
-
-        for (Punch punch : punchlist) {
-
-            HashMap<String, String> punchData = new HashMap<>();
-
-            punchData.put("id", String.valueOf(punch.getId()));
-
-            punchData.put("terminalid", String.valueOf(punch.getTerminalid()));
-
-            punchData.put("badgeid", punch.getBadge().getId());
-
-            punchData.put("punchtype", punch.getPunchtype().toString());
-
-            punchData.put("adjustmenttype", punch.getAdjustmentType().toString());
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
-
-            String adjustedtimestamp = punch.getAdjustedtimestamp().format(formatter).toUpperCase();
-
-            punchData.put("adjustedtimestamp", adjustedtimestamp);
-
-            String originaltimestamp = punch.getOriginaltimestamp().format(formatter).toUpperCase();
-
-            punchData.put("originaltimestamp", originaltimestamp);
-
-            jsonData.add(punchData);
-        }
+    public static String getPunchListPlusTotalsAsJSON(ArrayList<Punch> punchlist, Shift shift) {        
+        HashMap<String, Object> punchesAndTotals = new HashMap<>();
         
-        HashMap<String, Object> total = new HashMap<>();
+        punchesAndTotals.put("absenteeism", calculateAbsenteeism(punchlist, shift));
+        punchesAndTotals.put("totalminutes", calculateTotalMinutes(punchlist, shift));
+        punchesAndTotals.put("punchlist", getPunchListAsJSON(punchlist));
         
-        total.put("absenteeism", calculateAbsenteeism(punchlist, shift));
-        total.put("totalminutes", calculateTotalMinutes(punchlist, shift));
-        total.put("punchlist", jsonData);
-        
-        String json = Jsoner.serialize(total);
+        String json = Jsoner.serialize(punchesAndTotals);
 
         return json;
     }
