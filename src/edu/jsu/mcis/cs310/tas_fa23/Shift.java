@@ -1,7 +1,9 @@
 
 package edu.jsu.mcis.cs310.tas_fa23;
 
+import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.HashMap;
 
 /**
  * 
@@ -11,11 +13,18 @@ public class Shift {
     private Integer id = null;
     private final String description;
     private final DailySchedule defaultSchedule;
+    private HashMap<Integer, DailySchedule> dailySchedules;
     
     public Shift(Integer id, String desc, DailySchedule defaultSchedule) {
         this.id = id;
         this.description = desc;
         this.defaultSchedule = defaultSchedule;
+        
+        dailySchedules.put(1, defaultSchedule);
+        dailySchedules.put(2, defaultSchedule);
+        dailySchedules.put(3, defaultSchedule);
+        dailySchedules.put(4, defaultSchedule);
+        dailySchedules.put(5, defaultSchedule);
     }
     
     public Integer getId() {
@@ -76,6 +85,10 @@ public class Shift {
     
     public Integer getLunchThreshold() {
         return defaultSchedule.getLunchThreshold();
+    }
+    
+    public DailySchedule getDailySchedule(DayOfWeek day) {
+        return dailySchedules.get(day.ordinal());
     }
     
     @Override
