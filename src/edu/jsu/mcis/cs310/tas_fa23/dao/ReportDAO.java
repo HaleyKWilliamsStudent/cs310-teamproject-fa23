@@ -7,14 +7,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ReportDAO {
 
-    private static final String QUERY_EMPLOYEE = "SELECT * FROM employee ORDER BY lastname, firstname";
-    private static final String QUERY_EMPLOYEE_DEPARTMENT = "SELECT * FROM employee WHERE departmentid = ? ORDER BY lastname, firstname";
-    private static final String QUERY_EMPLOYEE_TYPE = "SELECT * FROM employeetype where id = ?";
+    private static final String QUERY_EMPLOYEE = "SELECT e.badgeid, e.departmentid, et.description as employeetype FROM employee e JOIN employeetype et ON e.employeetypeid = et.id ORDER BY e.lastname, e.firstname";
+    private static final String QUERY_EMPLOYEE_DEPARTMENT = "SELECT e.badgeid, e.departmentid, et.description as employeetype FROM employee e JOIN employeetype et ON e.employeetypeid = et.id WHERE e.departmentid = ? ORDER BY e.lastname, e.firstname";
+    private static final String QUERY_IN_OUT = "SELECT e.*, p.timestamp as timestamp, s.description as shift, et.description as employeetype from employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN event p ON e.badgeid = p.badgeid";
 
     private final DAOFactory daoFactory;
 
@@ -51,7 +54,7 @@ public class ReportDAO {
 
                     String badgeid = rs.getString("badgeid");
                     int departmentid = rs.getInt("departmentid");
-                    int employeetypeid = rs.getInt("employeetypeid");
+                    String employeetype = rs.getString("employeetype");
 
                     Badge badge = badgeDAO.find(badgeid);
                     Department department = departmentDAO.find(departmentid);
@@ -59,19 +62,91 @@ public class ReportDAO {
                     badgeData.put("badgeid", badgeid);
                     badgeData.put("name", badge.getDescription());
                     badgeData.put("department", department.getDescription());
-
-                    ps = conn.prepareStatement(QUERY_EMPLOYEE_TYPE);
-                    ps.setInt(1, employeetypeid);
-
-                    ResultSet rs2 = ps.executeQuery();
-
-                    if (rs2.next()) {
-                        badgeData.put("type", rs2.getString("description"));
-
-                    }
+                    badgeData.put("type", employeetype);
 
                     employees.add(badgeData);
 
+                }
+
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+        return Jsoner.serialize(employees);
+
+    }
+
+    public String getWhosInWhosOut(LocalDateTime ts, Integer departmentId) {
+
+        ArrayList<HashMap<String, String>> employees = new ArrayList<>();
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+
+                ps = conn.prepareStatement(QUERY_IN_OUT);
+//                ps.setTimestamp(1, Timestamp.valueOf(ts));
+//                if (departmentId != null) {
+//                    ps.setInt(2, departmentId);
+//                    ps.setInt(3, departmentId);
+//                } else {
+//                    ps.setObject(2, null);
+//                    ps.setObject(3, null);
+//                }
+
+                rs = ps.executeQuery();
+
+                while (rs.next()) {
+                    HashMap<String, String> inOutData = new HashMap<>();
+
+                    String badgeid = rs.getString("badgeid");
+                    String firstname = rs.getString("firstname");
+                    String lastname = rs.getString("lastname");
+                    String shift = rs.getString("shift");
+//                    String status = rs.getString("status");
+
+                    Timestamp arrived = rs.getTimestamp("timestamp");
+                    if (arrived != null) {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
+                        inOutData.put("arrived", arrived.toLocalDateTime().format(formatter).toUpperCase());
+
+                    }
+
+                    inOutData.put("employeetype", rs.getString("employeetype"));
+
+                    inOutData.put("firstname", firstname);
+                    inOutData.put("badgeid", badgeid);
+                    inOutData.put("shift", shift);
+                    inOutData.put("lastname", lastname);
+//                    inOutData.put("status", status);
+
+                    employees.add(inOutData);
                 }
 
             }
