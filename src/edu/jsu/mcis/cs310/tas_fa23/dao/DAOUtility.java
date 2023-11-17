@@ -123,12 +123,12 @@ public final class DAOUtility {
         return new BigDecimal("1").subtract(percentage).multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
     }
 
-    public static String getPunchListPlusTotalsAsJSON(ArrayList<Punch> punchlist, Shift shift) {
+    public static String getPunchListPlusTotalsAsJSON(ArrayList<Punch> punchlist, Shift shift) throws JsonException {
         HashMap<String, Object> punchesAndTotals = new HashMap<>();
 
-        punchesAndTotals.put("absenteeism", calculateAbsenteeism(punchlist, shift));
+        punchesAndTotals.put("absenteeism", calculateAbsenteeism(punchlist, shift) + "%");
         punchesAndTotals.put("totalminutes", calculateTotalMinutes(punchlist, shift));
-        punchesAndTotals.put("punchlist", getPunchListAsJSON(punchlist));
+        punchesAndTotals.put("punchlist", Jsoner.deserialize(getPunchListAsJSON(punchlist)));
 
         String json = Jsoner.serialize(punchesAndTotals);
 

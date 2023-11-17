@@ -157,7 +157,14 @@ public class Punch {
                 // Is the punch made within the interval after the end of the shift
             } else if (ots.isBefore(shiftStart) && ots.isBefore(shiftStartInterval)) {
                 // Clock in punch outside the grace period but within the round interval
-                round(roundInterval, minutesOver);
+
+                if (ots.getMinute() % roundInterval == 0) {
+                    setAdjustedTimestamp(ots, PunchAdjustmentType.NONE);
+                } else {
+                    round(roundInterval, minutesOver);
+
+                }
+
             } else if (ots.isBefore(shiftStopInterval) && ots.isAfter(shiftStop)) {
                 setAdjustedTimestamp(shiftStop, PunchAdjustmentType.SHIFT_STOP);
                 // Is the punch made before the end of the shift and after the grace period before the shift end
