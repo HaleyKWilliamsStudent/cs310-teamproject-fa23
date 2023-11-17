@@ -90,4 +90,17 @@ public class DailySchedule {
     public Integer getLunchThreshold() {
         return lunchthreshold;
     }
+    
+        @Override
+    /**
+     * returns a formatted version of all fields belonging to a shift
+     */
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        s.append(getShiftStart()).append(" - ").append(getShiftStop());
+        s.append(" (").append(getShiftDuration()).append(" minutes); Lunch: ");
+        s.append(getLunchStart()).append(" - ").append(getLunchStop()).append(" (");
+        s.append(getLunchDuration()).append(" minutes)");
+        return s.toString();
+    }
 }
