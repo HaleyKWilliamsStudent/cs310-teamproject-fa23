@@ -56,6 +56,10 @@ public final class DAOFactory {
         return new AbsenteeismDAO(this);
     }
     
+    public ScheduleOverrideDAO getScheduleOverrideDAO() {
+        return new ScheduleOverrideDAO(this);
+    }
+    
     public ReportDAO getReportDAO(){
         return new ReportDAO (this);
     }
