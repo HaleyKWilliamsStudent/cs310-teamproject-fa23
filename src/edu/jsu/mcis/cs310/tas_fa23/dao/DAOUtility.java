@@ -6,11 +6,13 @@ import java.util.HashMap;
 import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import com.github.cliftonlabs.json_simple.*;
+import edu.jsu.mcis.cs310.tas_fa23.DailySchedule;
+import edu.jsu.mcis.cs310.tas_fa23.EventType;
 import edu.jsu.mcis.cs310.tas_fa23.Punch;
 import edu.jsu.mcis.cs310.tas_fa23.Shift;
-import edu.jsu.mcis.cs310.tas_fa23.EventType;
 import edu.jsu.mcis.cs310.tas_fa23.PunchAdjustmentType;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  *
@@ -56,71 +58,81 @@ public final class DAOUtility {
         return json;
     }
 
-    public static int calculateTotalMinutes(ArrayList<Punch> punchlist, Shift shift) {
+    public static int calculateTotalMinutes(ArrayList<Punch> punchList, Shift shift) {
         int totalMinutes = 0;
-        int dayTotal = 0;
+        int dailyMinutes = 0;
 
-        LocalDateTime clockin;
-        LocalDateTime clockout;
+        LocalDate currentDay = null;
+        Punch clockIn = null;
 
-        boolean isNewDay;
         boolean clockedOut = false;
+        DailySchedule schedule = null;
 
-        for (int i = 1; i < punchlist.size(); i++) {
-            if (ChronoUnit.DAYS.between(punchlist.get(i - 1).getAdjustedtimestamp().toLocalDate(), punchlist.get(i).getAdjustedtimestamp().toLocalDate()) > 0) {
-                isNewDay = true;
-                totalMinutes += dayTotal;
-                dayTotal = 0;
+        for (Punch punch : punchList) {
+            DayOfWeek day = punch.getAdjustedtimestamp().getDayOfWeek();
+            schedule = shift.getDailySchedule(day);
+
+            if (!punch.getAdjustedtimestamp().toLocalDate().equals(currentDay)) {
+                totalMinutes += dailyMinutes;
+                currentDay = punch.getOriginaltimestamp().toLocalDate();
+                dailyMinutes = 0;
+                clockIn = null;
                 clockedOut = false;
-            } else {
-                isNewDay = false;
             }
 
-            if (punchlist.get(i).getPunchtype() == EventType.CLOCK_OUT) {
-                clockin = punchlist.get(i - 1).getAdjustedtimestamp();
-                clockout = punchlist.get(i).getAdjustedtimestamp();
-                dayTotal += ChronoUnit.MINUTES.between(clockin, clockout);
-                if (punchlist.get(i).getAdjustmentType() == PunchAdjustmentType.LUNCH_START) {
-                    clockedOut = true;
-                }
-            } else {
-                continue;
+            switch (punch.getPunchtype()) {
+                case CLOCK_IN:
+                    clockIn = punch;
+                    break;
+                case CLOCK_OUT:
+                    if (clockIn != null) {
+                        int minutesWorked = (int) ChronoUnit.MINUTES.between(clockIn.getAdjustedtimestamp(), punch.getAdjustedtimestamp());
+                        if (minutesWorked > schedule.getLunchThreshold() && !clockedOut) {
+                            minutesWorked -= schedule.getLunchDuration();
+                        }
+                        dailyMinutes += minutesWorked;
+                        
+                        if (punch.getAdjustmentType() == PunchAdjustmentType.LUNCH_START) {
+                            clockedOut = true;
+                        }
+                    }
+                    clockIn = null;
+                    break;
+                case TIME_OUT:
+                    clockIn = null;
+                    break;
             }
-
-            if (!isNewDay && dayTotal > shift.getLunchThreshold() && !clockedOut) {
-                dayTotal -= shift.getLunchDuration();
-            }
-
-            if (isNewDay) {
-                totalMinutes += dayTotal;
-            } else if (i == punchlist.size() - 1) {
-                totalMinutes += dayTotal;
-            }
-
         }
+
+        totalMinutes += dailyMinutes;
 
         return totalMinutes;
     }
 
     public static BigDecimal calculateAbsenteeism(ArrayList<Punch> punchlist, Shift s) {
-        int minutesWorked = calculateTotalMinutes(punchlist, s);
+        BigDecimal minutesWorked = BigDecimal.valueOf(calculateTotalMinutes(punchlist, s));
 
-        int expectedMinutes = (s.getShiftDuration() * 5) - (s.getLunchDuration() * 5);
+        System.err.println("Minutes Worked: " + minutesWorked);
 
-        double percentage = ((double) minutesWorked / expectedMinutes);
+        BigDecimal scheduledMinutes = BigDecimal.valueOf(s.getScheduledMinutes());
 
-        return BigDecimal.valueOf((1 - percentage) * 100).setScale(2);
+        System.err.println("Scheduled Minutes: " + scheduledMinutes);
+
+        BigDecimal percentage = minutesWorked.divide(scheduledMinutes, 5, RoundingMode.HALF_UP);
+
+        return new BigDecimal("1").subtract(percentage).multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
     }
 
-    public static String getPunchListPlusTotalsAsJSON(ArrayList<Punch> punchlist, Shift shift) {        
+    public static String getPunchListPlusTotalsAsJSON(ArrayList<Punch> punchlist, Shift shift) {
         HashMap<String, Object> punchesAndTotals = new HashMap<>();
-        
+
         punchesAndTotals.put("absenteeism", calculateAbsenteeism(punchlist, shift));
         punchesAndTotals.put("totalminutes", calculateTotalMinutes(punchlist, shift));
         punchesAndTotals.put("punchlist", getPunchListAsJSON(punchlist));
-        
+
         String json = Jsoner.serialize(punchesAndTotals);
 
         return json;
     }
+
 }

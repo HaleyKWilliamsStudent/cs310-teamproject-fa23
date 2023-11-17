@@ -117,16 +117,19 @@ public class Punch {
      */
     public void adjust(Shift s) {
         LocalDateTime ots = originalTimestamp;
-        LocalTime shiftStartTime = s.getShiftStart();
-        LocalTime shiftStopTime = s.getShiftStop();
-        LocalTime lunchStartTime = s.getLunchStart();
-        LocalTime lunchStopTime = s.getLunchStop();
-        int roundInterval = s.getRoundInterval();
-        int gracePeriod = s.getGracePeriod();
-        int dockPenalty = s.getDockPenalty();
+        DayOfWeek day = ots.getDayOfWeek();
+        DailySchedule dailySchedule = s.getDailySchedule(day);
+
+        LocalTime shiftStartTime = dailySchedule.getShiftStart();
+        LocalTime shiftStopTime = dailySchedule.getShiftStop();
+        LocalTime lunchStartTime = dailySchedule.getLunchStart();
+        LocalTime lunchStopTime = dailySchedule.getLunchStop();
+        int roundInterval = dailySchedule.getRoundInterval();
+        int gracePeriod = dailySchedule.getGracePeriod();
+        int dockPenalty = dailySchedule.getDockPenalty();
         int minutesOver = ots.getMinute() % roundInterval;
 
-        boolean isWeekday = (ots.getDayOfWeek() != DayOfWeek.SATURDAY && ots.getDayOfWeek() != DayOfWeek.SUNDAY);
+        boolean isWeekday = (day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY);
         boolean isNotTimeout = punchType != EventType.TIME_OUT;
 
         LocalDateTime shiftStart = ots.with(shiftStartTime);
@@ -135,6 +138,7 @@ public class Punch {
         LocalDateTime shiftStop = ots.with(shiftStopTime);
         LocalDateTime shiftStopGrace = shiftStop.minusMinutes(gracePeriod);
 
+        LocalDateTime shiftStartInterval = shiftStart.minusMinutes(roundInterval);
         LocalDateTime shiftStopInterval = shiftStop.plusMinutes(roundInterval);
 
         LocalDateTime lunchStart = ots.with(lunchStartTime);
@@ -151,11 +155,15 @@ public class Punch {
                     setAdjustedTimestamp(shiftStart, PunchAdjustmentType.SHIFT_START);
                 }
                 // Is the punch made within the interval after the end of the shift
+            } else if (ots.isBefore(shiftStart) && ots.isBefore(shiftStartInterval)) {
+                // Clock in punch outside the grace period but within the round interval
+                round(roundInterval, minutesOver);
             } else if (ots.isBefore(shiftStopInterval) && ots.isAfter(shiftStop)) {
                 setAdjustedTimestamp(shiftStop, PunchAdjustmentType.SHIFT_STOP);
                 // Is the punch made before the end of the shift and after the grace period before the shift end
             } else if (ots.isBefore(shiftStop) && ots.isAfter(shiftStopGrace)) {
                 setAdjustedTimestamp(shiftStop, PunchAdjustmentType.SHIFT_STOP);
+
             } // Is the punch made after the start of lunch and before the end of lunch
             else if (ots.isAfter(lunchStart) && ots.isBefore(lunchStop)) {
                 if (punchType == EventType.CLOCK_OUT) {
@@ -175,23 +183,21 @@ public class Punch {
                     long minutesSinceShiftStart = ChronoUnit.MINUTES.between(shiftStart, ots);
                     long minutesUntilShiftEnd = ChronoUnit.MINUTES.between(ots, shiftStop);
 
-                    // If the timestamp is on a perfect interval, no adjustment is needed.
                     if (ots.getMinute() % roundInterval == 0) {
                         setAdjustedTimestamp(ots, PunchAdjustmentType.NONE);
-                        // If the timestamp is within the rounding interval of the shift start and is closer to the shift start than the shift end
                     } else if (minutesSinceShiftStart <= roundInterval && minutesSinceShiftStart < minutesUntilShiftEnd) {
                         setAdjustedTimestamp(shiftStart, PunchAdjustmentType.SHIFT_START);
-                        // If the timestamp is within the rounding interval of the shift end
                     } else if (minutesUntilShiftEnd <= roundInterval) {
                         setAdjustedTimestamp(shiftStop, PunchAdjustmentType.SHIFT_STOP);
-                        // If the timestamp is neither close to the shift start nor the shift end, round to the nearest interval
                     } else {
+                        // Apply Interval Rounding
+
                         round(roundInterval, minutesOver);
                     }
                 } else {
+                    // Apply Interval Rounding for Clock Out punches
                     if (ots.getMinute() % roundInterval == 0) {
                         setAdjustedTimestamp(ots, PunchAdjustmentType.NONE);
-
                     } else {
                         round(roundInterval, minutesOver);
                     }

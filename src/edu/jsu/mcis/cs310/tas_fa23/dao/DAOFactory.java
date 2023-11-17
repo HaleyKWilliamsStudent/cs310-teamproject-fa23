@@ -59,5 +59,4 @@ public final class DAOFactory {
     public ReportDAO getReportDAO(){
         return new ReportDAO (this);
     }
-
 }
