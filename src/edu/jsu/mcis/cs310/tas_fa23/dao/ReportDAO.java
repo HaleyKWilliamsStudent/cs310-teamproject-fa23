@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Date;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -17,8 +18,9 @@ public class ReportDAO {
 
     private static final String QUERY_EMPLOYEE = "SELECT e.badgeid, e.departmentid, et.description as employeetype FROM employee e JOIN employeetype et ON e.employeetypeid = et.id ORDER BY e.lastname, e.firstname";
     private static final String QUERY_EMPLOYEE_DEPARTMENT = "SELECT e.badgeid, e.departmentid, et.description as employeetype FROM employee e JOIN employeetype et ON e.employeetypeid = et.id WHERE e.departmentid = ? ORDER BY e.lastname, e.firstname";
-    private static final String QUERY_IN_OUT = "SELECT e.*, p.timestamp as timestamp, s.description as shift, et.description as employeetype from employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN event p ON e.badgeid = p.badgeid";
-
+    private static final String QUERY_IN_OUT = "SELECT e.firstname, e.lastname, e.badgeid, et.description AS employeetype, s.description AS shift, MIN(CASE WHEN p.eventtypeid = 1 THEN p.timestamp END) AS arrived, CASE WHEN MIN(CASE WHEN p.eventtypeid = 1 THEN p.timestamp END) <= ? THEN 'In' ELSE 'Out' END AS status FROM employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id LEFT JOIN event p ON e.badgeid = p.badgeid AND DATE(p.timestamp) = ? GROUP BY et.description, e.lastname, e.firstname, e.badgeid, s.description ORDER BY status, employeetype, e.lastname, e.firstname";
+    private static final String QUERY_IN_OUT_DEPARTMENT = "SELECT e.firstname, e.lastname, e.badgeid, et.description AS employeetype, s.description AS shift, MIN(CASE WHEN p.eventtypeid = 1 THEN p.timestamp END) AS arrived, CASE WHEN MIN(CASE WHEN p.eventtypeid = 1 THEN p.timestamp END) <= ? THEN 'In' ELSE 'Out' END AS status FROM employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id LEFT JOIN event p ON e.badgeid = p.badgeid AND DATE(p.timestamp) = ? WHERE e.departmentid = ? GROUP BY et.description, e.lastname, e.firstname, e.badgeid, s.description ORDER BY status, employeetype, e.lastname, e.firstname";
+    
     private final DAOFactory daoFactory;
 
     ReportDAO(DAOFactory daoFactory) {
@@ -109,19 +111,19 @@ public class ReportDAO {
             Connection conn = daoFactory.getConnection();
 
             if (conn.isValid(0)) {
-
-                ps = conn.prepareStatement(QUERY_IN_OUT);
-//                ps.setTimestamp(1, Timestamp.valueOf(ts));
-//                if (departmentId != null) {
-//                    ps.setInt(2, departmentId);
-//                    ps.setInt(3, departmentId);
-//                } else {
-//                    ps.setObject(2, null);
-//                    ps.setObject(3, null);
-//                }
-
+                if (departmentId != null) {
+                    ps = conn.prepareStatement(QUERY_IN_OUT_DEPARTMENT);
+                    ps.setTimestamp(1, Timestamp.valueOf(ts));
+                    ps.setDate(2, Date.valueOf(ts.toLocalDate()));
+                    ps.setInt(3, departmentId);
+                } else {
+                    ps = conn.prepareStatement(QUERY_IN_OUT);
+                    ps.setTimestamp(1, Timestamp.valueOf(ts));
+                    ps.setDate(2, Date.valueOf(ts.toLocalDate()));
+                }
+                              
                 rs = ps.executeQuery();
-
+                
                 while (rs.next()) {
                     HashMap<String, String> inOutData = new HashMap<>();
 
@@ -129,13 +131,12 @@ public class ReportDAO {
                     String firstname = rs.getString("firstname");
                     String lastname = rs.getString("lastname");
                     String shift = rs.getString("shift");
-//                    String status = rs.getString("status");
+                    String status = rs.getString("status");
 
-                    Timestamp arrived = rs.getTimestamp("timestamp");
-                    if (arrived != null) {
+                    Timestamp arrived = rs.getTimestamp("arrived");
+                    if (arrived != null && status.equals("In")) {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
                         inOutData.put("arrived", arrived.toLocalDateTime().format(formatter).toUpperCase());
-
                     }
 
                     inOutData.put("employeetype", rs.getString("employeetype"));
@@ -144,8 +145,8 @@ public class ReportDAO {
                     inOutData.put("badgeid", badgeid);
                     inOutData.put("shift", shift);
                     inOutData.put("lastname", lastname);
-//                    inOutData.put("status", status);
-
+                    inOutData.put("status", status);
+                    
                     employees.add(inOutData);
                 }
 
