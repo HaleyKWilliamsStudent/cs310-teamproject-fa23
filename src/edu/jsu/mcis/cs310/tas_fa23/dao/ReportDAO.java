@@ -3,12 +3,14 @@ package edu.jsu.mcis.cs310.tas_fa23.dao;
 import com.github.cliftonlabs.json_simple.Jsoner;
 import edu.jsu.mcis.cs310.tas_fa23.Badge;
 import edu.jsu.mcis.cs310.tas_fa23.Department;
+import edu.jsu.mcis.cs310.tas_fa23.EmployeeType;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -16,10 +18,13 @@ import java.util.HashMap;
 
 public class ReportDAO {
 
-    private static final String QUERY_EMPLOYEE = "SELECT e.badgeid, e.departmentid, et.description as employeetype FROM employee e JOIN employeetype et ON e.employeetypeid = et.id ORDER BY e.lastname, e.firstname";
-    private static final String QUERY_EMPLOYEE_DEPARTMENT = "SELECT e.badgeid, e.departmentid, et.description as employeetype FROM employee e JOIN employeetype et ON e.employeetypeid = et.id WHERE e.departmentid = ? ORDER BY e.lastname, e.firstname";
+    // Badge and Employee Queries
+    private static final String QUERY_EMPLOYEE = "SELECT e.*, et.description AS employeetype, s.description AS shift, b.id AS badgeid, b.description AS name, d.description AS department FROM employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN badge b ON e.badgeid = b.id JOIN department d ON e.departmentid = d.id ORDER BY e.lastname, e.firstname";
+    private static final String QUERY_EMPLOYEE_DEPARTMENT = "SELECT e.*, et.description AS employeetype, s.description AS shift, b.id AS badgeid, b.description AS name, d.description AS department FROM employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN badge b ON e.badgeid = b.id JOIN department d ON e.departmentid = d.id WHERE e.departmentid = ? ORDER BY e.lastname, e.firstname";
+    // WhosInWhosOut Queries
     private static final String QUERY_IN_OUT = "SELECT e.firstname, e.lastname, e.badgeid, et.description AS employeetype, s.description AS shift, MIN(CASE WHEN p.eventtypeid = 1 THEN p.timestamp END) AS arrived, CASE WHEN MIN(CASE WHEN p.eventtypeid = 1 THEN p.timestamp END) <= ? THEN 'In' ELSE 'Out' END AS status FROM employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id LEFT JOIN event p ON e.badgeid = p.badgeid AND DATE(p.timestamp) = ? GROUP BY et.description, e.lastname, e.firstname, e.badgeid, s.description ORDER BY status, employeetype, e.lastname, e.firstname";
     private static final String QUERY_IN_OUT_DEPARTMENT = "SELECT e.firstname, e.lastname, e.badgeid, et.description AS employeetype, s.description AS shift, MIN(CASE WHEN p.eventtypeid = 1 THEN p.timestamp END) AS arrived, CASE WHEN MIN(CASE WHEN p.eventtypeid = 1 THEN p.timestamp END) <= ? THEN 'In' ELSE 'Out' END AS status FROM employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id LEFT JOIN event p ON e.badgeid = p.badgeid AND DATE(p.timestamp) = ? WHERE e.departmentid = ? GROUP BY et.description, e.lastname, e.firstname, e.badgeid, s.description ORDER BY status, employeetype, e.lastname, e.firstname";
+    //Absenteeism Queries
     
     private final DAOFactory daoFactory;
 
@@ -28,9 +33,6 @@ public class ReportDAO {
     }
 
     public String getBadgeSummary(Integer departmentId) {
-        BadgeDAO badgeDAO = daoFactory.getBadgeDAO();
-        DepartmentDAO departmentDAO = daoFactory.getDepartmentDAO();
-
         ArrayList<HashMap<String, String>> employees = new ArrayList<>();
 
         PreparedStatement ps = null;
@@ -55,15 +57,15 @@ public class ReportDAO {
                     HashMap<String, String> badgeData = new HashMap<>();
 
                     String badgeid = rs.getString("badgeid");
-                    int departmentid = rs.getInt("departmentid");
                     String employeetype = rs.getString("employeetype");
-
-                    Badge badge = badgeDAO.find(badgeid);
-                    Department department = departmentDAO.find(departmentid);
-
+                    String department = rs.getString("department");
+                    String name = rs.getString("name");
+                                        
                     badgeData.put("badgeid", badgeid);
-                    badgeData.put("name", badge.getDescription());
-                    badgeData.put("department", department.getDescription());
+                    badgeData.put("name", name);
+                    
+                    badgeData.put("department", department);
+                    
                     badgeData.put("type", employeetype);
 
                     employees.add(badgeData);
@@ -148,6 +150,167 @@ public class ReportDAO {
                     inOutData.put("status", status);
                     
                     employees.add(inOutData);
+                }
+
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+        return Jsoner.serialize(employees);
+
+    }
+    
+    public String getHoursSummary(LocalDate date, Integer departmentId, EmployeeType employeeType) {        
+        ArrayList<HashMap<String, String>> hoursSummary = new ArrayList<>();
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+                if (departmentId != null) {
+                    
+                } else {
+                    
+                }
+                              
+                rs = ps.executeQuery();
+                
+                while (rs.next()) {
+                    HashMap<String, String> hourData = new HashMap<>();
+                    
+                    hoursSummary.add(hourData);
+                }
+
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+        return Jsoner.serialize(hoursSummary);
+
+    }
+    
+    public String getAbsenteeismHistory(Integer employeeId) {        
+        ArrayList<HashMap<String, String>> absHistory = new ArrayList<>();
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+                
+                              
+                rs = ps.executeQuery();
+                
+                while (rs.next()) {
+                    HashMap<String, String> absData = new HashMap<>();
+                    
+                    absHistory.add(absData);
+                }
+
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+        return Jsoner.serialize(absHistory);
+
+    }
+    
+    public String getEmployeeSummary(Integer departmentId) {
+        ArrayList<HashMap<String, String>> employees = new ArrayList<>();
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+
+                if (departmentId == null) {
+                    ps = conn.prepareStatement(QUERY_EMPLOYEE);
+                } else {
+                    ps = conn.prepareStatement(QUERY_EMPLOYEE_DEPARTMENT);
+                    ps.setInt(1, departmentId);
+                }
+
+                rs = ps.executeQuery();
+
+                while (rs.next()) {
+                    HashMap<String, String> employeeData = new HashMap<>();
+
+                    employees.add(employeeData);
+
                 }
 
             }
