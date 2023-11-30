@@ -341,4 +341,81 @@ public class ReportDAO {
         return Jsoner.serialize(employees);
 
     }
+    
+    public String getEmployeeeSummary (Integer departmentId){
+        ArrayList<HashMap<String, String>> employees = new ArrayList<>();
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+
+                if (departmentId == null) {
+                    ps = conn.prepareStatement(QUERY_EMPLOYEE);
+                } else {
+                    ps = conn.prepareStatement(QUERY_EMPLOYEE_DEPARTMENT);
+                    ps.setInt(1, departmentId);
+                }
+
+                rs = ps.executeQuery();
+
+                while (rs.next()) {
+                    HashMap<String, String> badgeData = new HashMap<>();
+
+                    String badgeid = rs.getString("badgeid");
+                    String employeetype = rs.getString("employeetype");
+                    String department = rs.getString("department");
+                    String name = rs.getString("name");
+                    String shift = rs.getString("shift");
+                    String startdate = rs.getString("startdate");
+                                        
+                    badgeData.put("badgeid", badgeid);
+                    
+                    badgeData.put("name", name);
+                    
+                    badgeData.put("department", department);
+                    
+                    badgeData.put("type", employeetype);
+                    
+                    badgeData.put("shift", shift);
+                    
+                    badgeData.put("startdata", startdate);
+
+                    employees.add(badgeData);
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+        return Jsoner.serialize(employees);
+
+   
+    }
 }
