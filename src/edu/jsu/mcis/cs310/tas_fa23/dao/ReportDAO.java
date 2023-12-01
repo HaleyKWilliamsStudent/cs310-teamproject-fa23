@@ -308,7 +308,7 @@ public class ReportDAO {
     }
 
     public String getAbsenteeismHistory(Integer employeeId) {
-        LinkedHashMap<String, Object> employees = new LinkedHashMap<>();
+        HashMap<String, Object> employees = new HashMap<>();
         ArrayList<HashMap<String, Object>> absHistory = new ArrayList<>();
 
         PreparedStatement ps = null;
