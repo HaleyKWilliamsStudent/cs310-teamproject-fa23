@@ -38,8 +38,11 @@ public class ReportDAO {
     private static final String QUERY_ABSENTEEISM = "SELECT b.description as name, d.description as department, e.badgeid, a.* from employee e JOIN absenteeism a ON e.id = a.employeeid JOIN badge b ON e.badgeid = b.id JOIN department d ON e.departmentid = d.id WHERE employeeid = ? ORDER BY a.payperiod LIMIT 12";
 
     // HoursSummary Queries
-    private static final String QUERY_HOURS = "SELECT et.description AS employeetype, s.description AS shift, e.firstname, e.lastname, e.middlename, e.badgeid, d.description AS department from employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN department d ON e.departmentid = d.id ORDER BY e.lastname, e.firstname, e.middlename";
-    
+    private static final String QUERY_HOURS_DEFAULT = "SELECT et.description AS employeetype, s.description AS shift, e.firstname, e.lastname, e.middlename, e.badgeid, d.description AS department from employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN department d ON e.departmentid = d.id ORDER BY e.lastname, e.firstname, e.middlename";
+    private static final String QUERY_HOURS_DEPARTMENT = "SELECT et.description AS employeetype, s.description AS shift, e.firstname, e.lastname, e.middlename, e.badgeid, d.description AS department from employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN department d ON e.departmentid = d.id WHERE e.departmentid = ? ORDER BY e.lastname, e.firstname, e.middlename";
+    private static final String QUERY_HOURS_TYPE = "SELECT et.description AS employeetype, s.description AS shift, e.firstname, e.lastname, e.middlename, e.badgeid, d.description AS department from employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN department d ON e.departmentid = d.id WHERE e.employeetypeid = ? ORDER BY e.lastname, e.firstname, e.middlename";
+    private static final String QUERY_HOURS_BOTH = "SELECT et.description AS employeetype, s.description AS shift, e.firstname, e.lastname, e.middlename, e.badgeid, d.description AS department from employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN department d ON e.departmentid = d.id WHERE e.employeetypeid = ? AND e.departmentid = ? ORDER BY e.lastname, e.firstname, e.middlename";
+
     private final DAOFactory daoFactory;
 
     ReportDAO(DAOFactory daoFactory) {
@@ -211,9 +214,17 @@ public class ReportDAO {
 
             if (conn.isValid(0)) {
                 if (departmentId != null) {
-                    ps = conn.prepareStatement(QUERY_HOURS);
+                    ps = conn.prepareStatement(QUERY_HOURS_DEPARTMENT);
+                    ps.setInt(1, departmentId);
+                } else if (employeeType != null) {
+                    ps = conn.prepareStatement(QUERY_HOURS_TYPE);
+                    ps.setInt(1, employeeType.ordinal());
+                } else if (departmentId != null && employeeType != null) {
+                    ps = conn.prepareStatement(QUERY_HOURS_BOTH);
+                    ps.setInt(1, employeeType.ordinal());
+                    ps.setInt(2, departmentId);
                 } else {
-                    ps = conn.prepareStatement(QUERY_HOURS);
+                    ps = conn.prepareStatement(QUERY_HOURS_DEFAULT);
                 }
 
                 rs = ps.executeQuery();
@@ -302,12 +313,12 @@ public class ReportDAO {
 
         PreparedStatement ps = null;
         ResultSet rs = null;
-        
+
         String name = "";
         String department = "";
-        
+
         DecimalFormat df = new DecimalFormat("0.00");
-        
+
         try {
 
             Connection conn = daoFactory.getConnection();
@@ -317,7 +328,7 @@ public class ReportDAO {
                 ps.setInt(1, employeeId);
 
                 rs = ps.executeQuery();
-                
+
                 double totalPercentage = 0.0;
                 int numPeriods = 0;
 
@@ -332,7 +343,7 @@ public class ReportDAO {
 
                     absData.put("payperiod", payperiod);
                     absData.put("percentage", df.format(percentage));
-                    
+
                     totalPercentage += percentage;
                     numPeriods++;
                     BigDecimal lifetime = BigDecimal.valueOf(totalPercentage / numPeriods).setScale(2, RoundingMode.HALF_DOWN);
@@ -342,7 +353,7 @@ public class ReportDAO {
 
                     employees.put("badgeid", badgeid);
                 }
-                
+
                 Collections.reverse(absHistory);
 
                 employees.put("absenteeismhistory", absHistory);
@@ -410,9 +421,9 @@ public class ReportDAO {
                     LocalDate active = rs.getDate("active").toLocalDate();
                     String middlename = rs.getString("middlename");
                     String lastname = rs.getString("lastname");
-                    
+
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-                    
+
                     employeeData.put("firstname", firstname);
                     employeeData.put("employeetype", employeetype);
                     employeeData.put("badgeid", badgeid);
@@ -421,7 +432,7 @@ public class ReportDAO {
                     employeeData.put("active", active.format(formatter));
                     employeeData.put("department", department);
                     employeeData.put("lastname", lastname);
-                    
+
                     employees.add(employeeData);
                 }
 
@@ -453,5 +464,5 @@ public class ReportDAO {
         return Jsoner.serialize(employees);
 
     }
-  
+
 }
