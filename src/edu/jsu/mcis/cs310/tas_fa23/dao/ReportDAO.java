@@ -2,8 +2,9 @@ package edu.jsu.mcis.cs310.tas_fa23.dao;
 
 import com.github.cliftonlabs.json_simple.Jsoner;
 import edu.jsu.mcis.cs310.tas_fa23.Badge;
-import edu.jsu.mcis.cs310.tas_fa23.Department;
 import edu.jsu.mcis.cs310.tas_fa23.EmployeeType;
+import edu.jsu.mcis.cs310.tas_fa23.Punch;
+import edu.jsu.mcis.cs310.tas_fa23.Shift;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;
@@ -13,9 +14,11 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Date;
 import java.text.DecimalFormat;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +37,9 @@ public class ReportDAO {
     //Absenteeism Queries
     private static final String QUERY_ABSENTEEISM = "SELECT b.description as name, d.description as department, e.badgeid, a.* from employee e JOIN absenteeism a ON e.id = a.employeeid JOIN badge b ON e.badgeid = b.id JOIN department d ON e.departmentid = d.id WHERE employeeid = ? ORDER BY a.payperiod LIMIT 12";
 
+    // HoursSummary Queries
+    private static final String QUERY_HOURS = "SELECT et.description AS employeetype, s.description AS shift, e.firstname, e.lastname, e.middlename, e.badgeid, d.description AS department from employee e JOIN employeetype et ON e.employeetypeid = et.id JOIN shift s ON e.shiftid = s.id JOIN department d ON e.departmentid = d.id ORDER BY e.lastname, e.firstname, e.middlename";
+    
     private final DAOFactory daoFactory;
 
     ReportDAO(DAOFactory daoFactory) {
@@ -190,6 +196,10 @@ public class ReportDAO {
     }
 
     public String getHoursSummary(LocalDate date, Integer departmentId, EmployeeType employeeType) {
+        BadgeDAO badgeDao = daoFactory.getBadgeDAO();
+        PunchDAO punchDao = daoFactory.getPunchDAO();
+        ShiftDAO shiftDao = daoFactory.getShiftDAO();
+
         ArrayList<HashMap<String, String>> hoursSummary = new ArrayList<>();
 
         PreparedStatement ps = null;
@@ -201,9 +211,9 @@ public class ReportDAO {
 
             if (conn.isValid(0)) {
                 if (departmentId != null) {
-
+                    ps = conn.prepareStatement(QUERY_HOURS);
                 } else {
-
+                    ps = conn.prepareStatement(QUERY_HOURS);
                 }
 
                 rs = ps.executeQuery();
@@ -211,7 +221,50 @@ public class ReportDAO {
                 while (rs.next()) {
                     HashMap<String, String> hourData = new HashMap<>();
 
-                    hoursSummary.add(hourData);
+                    Badge badge = badgeDao.find(rs.getString("badgeid"));
+                    Shift shift = shiftDao.find(badge);
+
+                    LocalDate begin = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+                    LocalDate end = begin.with(TemporalAdjusters.next(DayOfWeek.SATURDAY));
+
+                    ArrayList<Punch> punches = punchDao.list(badge, begin, end);
+
+                    for (Punch p : punches) {
+                        p.adjust(shift);
+                    }
+
+                    String employeetype = rs.getString("employeetype");
+                    String middlename = rs.getString("middlename");
+                    String lastname = rs.getString("lastname");
+                    String department = rs.getString("department");
+
+                    DecimalFormat df = new DecimalFormat("0.00");
+
+                    int totalMinutesWorked = DAOUtility.calculateTotalMinutes(punches, shift);
+                    int scheduledMinutes = shift.getScheduledMinutes();
+
+                    int regularMinutes = Math.min(totalMinutesWorked, scheduledMinutes);
+                    int overtimeMinutes = Math.max(0, totalMinutesWorked - scheduledMinutes);
+
+                    double regularHours = regularMinutes / 60.0;
+                    double overtimeHours = overtimeMinutes / 60.0;
+
+                    String regularF = df.format(regularHours);
+                    String overtimeF = df.format(overtimeHours);
+
+                    if (regularHours > 0) {
+                        hourData.put("employeetype", employeetype);
+                        hourData.put("shift", shift.getDescription());
+                        hourData.put("name", badge.getDescription());
+                        hourData.put("middlename", middlename);
+                        hourData.put("overtime", overtimeF);
+                        hourData.put("department", department);
+                        hourData.put("regular", regularF);
+                        hourData.put("lastname", lastname);
+
+                        hoursSummary.add(hourData);
+                    }
+
                 }
 
             }
