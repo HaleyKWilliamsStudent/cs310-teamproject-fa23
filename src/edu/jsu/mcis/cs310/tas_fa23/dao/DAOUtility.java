@@ -112,11 +112,7 @@ public final class DAOUtility {
     public static BigDecimal calculateAbsenteeism(ArrayList<Punch> punchlist, Shift s) {
         BigDecimal minutesWorked = BigDecimal.valueOf(calculateTotalMinutes(punchlist, s));
 
-        System.err.println("Minutes Worked: " + minutesWorked);
-
         BigDecimal scheduledMinutes = BigDecimal.valueOf(s.getScheduledMinutes());
-
-        System.err.println("Scheduled Minutes: " + scheduledMinutes);
 
         BigDecimal percentage = minutesWorked.divide(scheduledMinutes, 5, RoundingMode.HALF_UP);
 
