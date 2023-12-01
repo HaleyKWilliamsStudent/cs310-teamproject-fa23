@@ -7,13 +7,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Date;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 
 public class AbsenteeismDAO {
 
-    private static final String QUERY_FIND = "SELECT * FROM absenteeism WHERE employeeid = ? ";
+    private static final String QUERY_FIND = "SELECT * FROM absenteeism WHERE employeeid = ? AND payperiod = ?";
     private static final String QUERY_CREATE = "INSERT INTO absenteeism (employeeid, payperiod, percentage) VALUES (?, ?, ?)";
-    private static final String QUERY_UPDATE = "UPDATE absenteeism SET payperiod = ?, percentage = ? WHERE employeeid = ?";
+    private static final String QUERY_UPDATE = "UPDATE absenteeism SET percentage = ? WHERE employeeid = ? AND payperiod = ?";
+    private static final String QUERY_CLEAR = "DELETE FROM absenteeism WHERE employeeid = ?";
 
     private final DAOFactory daoFactory;
 
@@ -32,15 +36,17 @@ public class AbsenteeismDAO {
         Absenteeism absenteeism = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
+        
+        payperiod = payperiod.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
 
         try {
 
             Connection conn = daoFactory.getConnection();
 
-            if (conn.isValid(0)) {
-
+            if (conn.isValid(0)) {                
                 ps = conn.prepareStatement(QUERY_FIND);
                 ps.setInt(1, employee.getId());
+                ps.setDate(2, Date.valueOf(payperiod));
 
                 rs = ps.executeQuery();
 
@@ -88,7 +94,7 @@ public class AbsenteeismDAO {
 
         PreparedStatement ps = null;
         ResultSet rs = null;
-        
+                
         try {
 
             Connection conn = daoFactory.getConnection();
@@ -97,15 +103,58 @@ public class AbsenteeismDAO {
 
                 if (find(absenteeism.getEmployee(), absenteeism.getPayperiod()) != null) {
                     ps = conn.prepareStatement(QUERY_UPDATE);
-                    ps.setDate(1, java.sql.Date.valueOf(absenteeism.getPayperiod()));
-                    ps.setDouble(2, absenteeism.getPercentage().doubleValue());
-                    ps.setInt(3, absenteeism.getEmployee().getId());
+                    ps.setDouble(1, absenteeism.getPercentage().doubleValue());
+                    ps.setInt(2, absenteeism.getEmployee().getId());
+                    ps.setDate(3, Date.valueOf(absenteeism.getPayperiod()));
                 } else {
                     ps = conn.prepareStatement(QUERY_CREATE);
                     ps.setInt(1, absenteeism.getEmployee().getId());
-                    ps.setDate(2, java.sql.Date.valueOf(absenteeism.getPayperiod()));
+                    ps.setDate(2, Date.valueOf(absenteeism.getPayperiod()));
                     ps.setDouble(3, absenteeism.getPercentage().doubleValue());
                 }
+
+                ps.executeUpdate();
+
+            }
+
+        } catch (SQLException e) {
+
+            throw new DAOException(e.getMessage());
+
+        } finally {
+
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+
+        }
+
+    }
+    
+    public void clear(Integer employeeid) {
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+                
+        try {
+
+            Connection conn = daoFactory.getConnection();
+
+            if (conn.isValid(0)) {
+
+                ps = conn.prepareStatement(QUERY_CLEAR);
+                ps.setInt(1, employeeid);
 
                 ps.executeUpdate();
 
